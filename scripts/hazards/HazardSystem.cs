@@ -21,6 +21,9 @@ public partial class HazardSystem : Node
     private MothController _moth;
     private bool _smothered;
 
+    public HazardMotionState CrawlerState { get; private set; } = HazardMotionState.Stalled;
+    public HazardMotionState MothState { get; private set; } = HazardMotionState.Stalled;
+
     public void Initialize(
         BoardState board,
         VisibilitySystem visibility,
@@ -40,6 +43,8 @@ public partial class HazardSystem : Node
         _crawler = new CrawlerController(new GridCoord(board.Width - 2, 3));
         _moth = new MothController(new GridCoord(board.Width - 2, board.Height - 4));
         _smothered = false;
+        CrawlerState = HazardMotionState.Stalled;
+        MothState = HazardMotionState.Stalled;
         SyncMarkers();
     }
 
@@ -51,8 +56,16 @@ public partial class HazardSystem : Node
         }
 
         var context = new HazardContext(_board, _visibility, _lamp.Cell, _wick.CurrentRadius);
+        var crawlerCell = _crawler.Cell;
+        var mothCell = _moth.Cell;
         _crawler.TakeTurn(context);
         _moth.TakeTurn(context);
+        CrawlerState = _crawler.Cell == crawlerCell
+            ? HazardMotionState.Stalled
+            : context.IsLit(_crawler.Cell) ? HazardMotionState.Slowed : HazardMotionState.Moving;
+        MothState = _moth.Cell == mothCell
+            ? HazardMotionState.Stalled
+            : HazardMotionState.Moving;
         SyncMarkers();
 
         if (_crawler.HasReachedLamp || _moth.HasReachedLamp)

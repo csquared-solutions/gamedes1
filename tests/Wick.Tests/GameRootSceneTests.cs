@@ -20,12 +20,16 @@ public sealed class GameRootSceneTests
         Assert.Contains("res://scripts/hazards/HazardSystem.cs", scene);
         Assert.Contains("res://scenes/hazards/Crawler.tscn", scene);
         Assert.Contains("res://scenes/hazards/Moth.tscn", scene);
+        Assert.Contains("res://scenes/pickups/OilFlask.tscn", scene);
+        Assert.Contains("res://scenes/ui/Hud.tscn", scene);
         Assert.Contains("[node name=\"Player\" parent=\".\"", scene);
         Assert.Contains("[node name=\"Lamp\" parent=\".\"", scene);
         Assert.Contains("[node name=\"Stair\" parent=\".\"", scene);
         Assert.Contains("[node name=\"Crawler\" parent=\".\"", scene);
         Assert.Contains("[node name=\"Moth\" parent=\".\"", scene);
         Assert.Contains("[node name=\"HazardSystem\" type=\"Node\" parent=\".\"]", scene);
+        Assert.Contains("[node name=\"OilFlask\" parent=\".\"", scene);
+        Assert.Contains("[node name=\"Hud\" parent=\".\"", scene);
         Assert.Contains("[node name=\"LevelManager\" type=\"Node\" parent=\".\"]", scene);
     }
 

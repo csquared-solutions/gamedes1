@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/HazardStateIndicatorController.cs" id="1_hazard_icon"]
+
+[node name="HazardStateIcon" type="Control"]
+custom_minimum_size = Vector2(190, 24)
+script = ExtResource("1_hazard_icon")
+
+[node name="Label" type="Label" parent="."]
+theme_override_font_sizes/font_size = 16
+text = "HAZARD: STALLED"

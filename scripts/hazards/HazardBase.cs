@@ -4,6 +4,13 @@ using Wick.Core;
 
 namespace Wick.Hazards;
 
+public enum HazardMotionState
+{
+    Stalled,
+    Slowed,
+    Moving
+}
+
 public sealed class HazardContext
 {
     public HazardContext(BoardState board, VisibilitySystem visibility, GridCoord lampCell, int lampRadius)

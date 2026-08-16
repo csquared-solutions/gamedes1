@@ -93,9 +93,12 @@ public partial class PlayerController : Node2D
     private const int CellSize = 48;
     private PlayerMovementState _state;
     private LampController _lamp;
+    private bool _inputLocked;
 
     public event Action<GridCoord> CellChanged;
     public event Action RestartRequested;
+    public event Action FlareRequested;
+    public event Action FlaskLiftRequested;
 
     public GridCoord Cell => _state?.Cell ?? default;
 
@@ -151,8 +154,17 @@ public partial class PlayerController : Node2D
         return true;
     }
 
+    public void LockInput() => _inputLocked = true;
+
+    public void UnlockInput() => _inputLocked = false;
+
     public override void _UnhandledInput(InputEvent inputEvent)
     {
+        if (_inputLocked)
+        {
+            return;
+        }
+
         if (inputEvent.IsActionPressed("restart_level"))
         {
             RestartRequested?.Invoke();
@@ -167,6 +179,20 @@ public partial class PlayerController : Node2D
                 TryRecoverLamp();
             }
 
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (inputEvent.IsActionPressed("flare"))
+        {
+            FlareRequested?.Invoke();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (inputEvent.IsActionPressed("lift_flask"))
+        {
+            FlaskLiftRequested?.Invoke();
             GetViewport().SetInputAsHandled();
             return;
         }
@@ -197,6 +223,7 @@ public partial class PlayerController : Node2D
         Bind("move_right", Key.Right, Key.D);
         Bind("lamp_toggle", Key.E, Key.Q);
         Bind("flare", Key.F, Key.Space);
+        Bind("lift_flask", Key.G);
         Bind("restart_level", Key.R);
     }
 

@@ -1,0 +1,52 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/HudController.cs" id="1_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/WickGauge.tscn" id="2_wick_gauge"]
+[ext_resource type="PackedScene" path="res://scenes/ui/HazardStateIcon.tscn" id="3_hazard_icon"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_hud"]
+bg_color = Color(0.04, 0.05, 0.07, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7, 0.52, 0.22, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Hud" type="CanvasLayer"]
+layer = 2
+script = ExtResource("1_hud")
+
+[node name="Margin" type="MarginContainer" parent="."]
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 320.0
+offset_bottom = 220.0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Panel" type="PanelContainer" parent="Margin"]
+theme_override_styles/panel = SubResource("StyleBox_hud")
+
+[node name="Content" type="VBoxContainer" parent="Margin/Panel"]
+theme_override_constants/separation = 6
+
+[node name="WickGauge" parent="Margin/Panel/Content" instance=ExtResource("2_wick_gauge")]
+
+[node name="ReturnCost" type="Label" parent="Margin/Panel/Content"]
+theme_override_colors/font_color = Color(0.82, 0.82, 0.75, 1)
+theme_override_font_sizes/font_size = 16
+text = "RETURN COST 0"
+
+[node name="CrawlerState" parent="Margin/Panel/Content" instance=ExtResource("3_hazard_icon")]
+
+[node name="MothState" parent="Margin/Panel/Content" instance=ExtResource("3_hazard_icon")]
+
+[node name="LossCause" type="Label" parent="Margin/Panel/Content"]
+theme_override_colors/font_color = Color(1, 0.4, 0.3, 1)
+theme_override_font_sizes/font_size = 15

@@ -21,6 +21,7 @@ public partial class LevelManager : Node
     private TurnManager _turns;
     private GameEvents _events;
     private HazardSystem _hazards;
+    private Pickups.OilFlaskController _oilFlask;
 
     public override void _Ready()
     {
@@ -32,9 +33,12 @@ public partial class LevelManager : Node
         _turns = GetNode<TurnManager>("../TurnManager");
         _events = GetNode<GameEvents>("../GameEvents");
         _hazards = GetNode<HazardSystem>("../HazardSystem");
+        _oilFlask = GetNode<Pickups.OilFlaskController>("../OilFlask");
 
         _player.CellChanged += OnPlayerMoved;
         _player.RestartRequested += RestartLevel;
+        _player.FlareRequested += OnFlareRequested;
+        _player.FlaskLiftRequested += OnFlaskLiftRequested;
         _stair.Reached += OnStairReached;
         _events.Connect(GameEvents.SignalName.LightOut, Callable.From<string>(OnLightOut));
 
@@ -60,6 +64,7 @@ public partial class LevelManager : Node
             _events,
             GetNode<Node2D>("../Crawler"),
             GetNode<Node2D>("../Moth"));
+        _oilFlask.Configure(_wick, _turns, _player, _boardRenderer, OnResourceTurnSpent, RefreshTacticalState);
     }
 
     public void RestartLevel()
@@ -72,10 +77,34 @@ public partial class LevelManager : Node
 
     private void OnPlayerMoved(GridCoord cell)
     {
-        _boardRenderer.RecomputeVisibility(_lamp.Cell, _wick.CurrentRadius);
+        RefreshTacticalState();
         _stair.TryEnter(cell);
         _hazards.AdvanceTurn();
+        _wick.AdvanceTurn();
+        RefreshTacticalState();
     }
+
+    private void OnFlareRequested()
+    {
+        if (!_wick.TryFireFlare())
+        {
+            return;
+        }
+
+        RefreshTacticalState();
+        OnResourceTurnSpent();
+        _wick.AdvanceTurn();
+        RefreshTacticalState();
+    }
+
+    private async void OnFlaskLiftRequested() => await _oilFlask.BeginLift();
+
+    private void OnResourceTurnSpent()
+    {
+        _hazards.AdvanceTurn();
+    }
+
+    private void RefreshTacticalState() => _boardRenderer.RecomputeVisibility(_lamp.Cell, _wick.CurrentRadius);
 
     private void OnLightOut(string cause) => CallDeferred(nameof(RestartLevel));
 

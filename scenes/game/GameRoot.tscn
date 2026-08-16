@@ -11,6 +11,9 @@
 [ext_resource type="Script" path="res://scripts/hazards/HazardSystem.cs" id="10_hazards"]
 [ext_resource type="PackedScene" path="res://scenes/hazards/Crawler.tscn" id="11_crawler"]
 [ext_resource type="PackedScene" path="res://scenes/hazards/Moth.tscn" id="12_moth"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/OilFlask.tscn" id="13_oil_flask"]
+[ext_resource type="PackedScene" path="res://scenes/ui/Hud.tscn" id="14_hud"]
+[ext_resource type="Script" path="res://scripts/ui/LampTetherController.cs" id="15_tether"]
 
 [node name="GameRoot" type="Node"]
 
@@ -37,6 +40,13 @@ script = ExtResource("2_wick_system")
 
 [node name="HazardSystem" type="Node" parent="."]
 script = ExtResource("10_hazards")
+
+[node name="OilFlask" parent="." instance=ExtResource("13_oil_flask")]
+
+[node name="LampTether" type="Node2D" parent="."]
+script = ExtResource("15_tether")
+
+[node name="Hud" parent="." instance=ExtResource("14_hud")]
 
 [node name="LevelManager" type="Node" parent="."]
 script = ExtResource("6_level_manager")

@@ -46,6 +46,12 @@ public partial class BoardRenderer : Node2D
         QueueRedraw();
     }
 
+    public void ForceDarkness()
+    {
+        _visibility?.Recompute(_lampCell, 0);
+        QueueRedraw();
+    }
+
     public override void _Draw()
     {
         if (_board is null || _visibility is null)
