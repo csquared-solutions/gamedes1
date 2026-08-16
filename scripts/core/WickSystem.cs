@@ -2,7 +2,7 @@ using Godot;
 
 namespace Wick.Core;
 
-public partial class WickSystem : Node
+public partial class WickSystem : Node, IPlayerWick
 {
     private readonly WickState _state = new();
     private GameEvents _events;

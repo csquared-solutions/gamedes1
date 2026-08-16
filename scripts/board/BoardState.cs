@@ -34,4 +34,6 @@ public sealed class BoardState
     public bool IsInside(GridCoord cell) => cell.X >= 0 && cell.X < Width && cell.Y >= 0 && cell.Y < Height;
 
     public bool IsWall(GridCoord cell) => _walls.Contains(cell);
+
+    public bool IsWalkable(GridCoord cell) => IsInside(cell) && !IsWall(cell);
 }

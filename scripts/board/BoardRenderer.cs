@@ -32,6 +32,13 @@ public partial class BoardRenderer : Node2D
         RecomputeVisibility(_initialLampCell, PlaceholderRadius);
     }
 
+    public void Configure(BoardState board, VisibilitySystem visibility, GridCoord lampCell, int radius)
+    {
+        _board = board;
+        _visibility = visibility;
+        RecomputeVisibility(lampCell, radius);
+    }
+
     public void RecomputeVisibility(GridCoord lampCell, int radius)
     {
         _lampCell = lampCell;

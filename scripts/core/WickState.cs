@@ -2,7 +2,7 @@ using System;
 
 namespace Wick.Core;
 
-public sealed class WickState
+public sealed class WickState : IPlayerWick
 {
     public int CurrentWick { get; private set; }
     public int CurrentRadius => CurrentWick / 2;
