@@ -86,4 +86,24 @@ public sealed class OilFlaskStateTests
 
         Assert.Equal(new[] { 0, 0 }, hazardRadii);
     }
+
+    [Fact]
+    public void FlaskLift_TerminalCallbackStopsLiftAndKeepsInputLocked()
+    {
+        var wick = new WickState();
+        wick.Initialize(6);
+        var turns = new TurnState();
+        var pickup = new GridCoord(2, 2);
+        var flasks = new OilFlaskCollectionState(wick, turns, new[] { pickup });
+        var terminal = false;
+        flasks.TurnSpent += _ => terminal = true;
+
+        var completed = flasks.TryBeginLift(pickup, () => !terminal);
+
+        Assert.True(completed);
+        Assert.True(flasks.IsCollected(pickup));
+        Assert.Equal(5, wick.CurrentWick);
+        Assert.Equal(1, turns.CurrentTurn);
+        Assert.False(OilFlaskInputPolicy.ShouldUnlockAfterLift(terminal));
+    }
 }

@@ -29,6 +29,9 @@ public partial class WickSystem : Node, IPlayerWick
 
     public void Initialize(int startingWick) => _state.Initialize(startingWick);
 
+    public void StartFreshLevel(int startingWick, bool freezeDecrease) =>
+        _state.StartFreshLevel(startingWick, freezeDecrease);
+
     public bool Spend(int amount) => _state.Spend(amount);
 
     public void Restore(int amount) => _state.Restore(amount);

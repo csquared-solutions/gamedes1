@@ -1,6 +1,7 @@
 using Wick.Actors;
 using Wick.Board;
 using Wick.Core;
+using Wick.Data;
 using Wick.Hazards;
 using Wick.Pickups;
 using Xunit;
@@ -9,6 +10,21 @@ namespace Wick.Tests;
 
 public sealed class PracticeModeTests
 {
+    [Fact]
+    public void FreshCampaignCopyAfterPracticeDiscardsFrozenFlaskGain()
+    {
+        var wick = new WickState();
+        wick.StartFreshLevel(12, freezeDecrease: true);
+        wick.Restore(LevelTuning.FlaskRestore);
+        Assert.Equal(18, wick.CurrentWick);
+
+        wick.StartFreshLevel(12, freezeDecrease: false);
+
+        Assert.Equal(12, wick.CurrentWick);
+        Assert.False(wick.IsDecreaseFrozen);
+        Assert.False(wick.IsFlareActive);
+    }
+
     [Fact]
     public void PracticeMode_FreezesWickDecreaseWhileTurnsStillAdvance()
     {

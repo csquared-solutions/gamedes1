@@ -29,7 +29,9 @@ public sealed class OilFlaskState
     public bool IsAvailableAt(GridCoord playerCell) =>
         !IsCollected && playerCell == _cell && !_wick.IsDepleted;
 
-    public bool TryBeginLift(GridCoord playerCell)
+    public bool TryBeginLift(GridCoord playerCell) => TryBeginLift(playerCell, () => true);
+
+    public bool TryBeginLift(GridCoord playerCell, Func<bool> canContinue)
     {
         if (!IsAvailableAt(playerCell))
         {
@@ -44,6 +46,11 @@ public sealed class OilFlaskState
 
         _turns.AdvanceTurn();
         TurnSpent?.Invoke();
+        if (!canContinue())
+        {
+            return true;
+        }
+
         if (!_wick.Spend(1) || _wick.IsDepleted)
         {
             return true;
@@ -51,6 +58,11 @@ public sealed class OilFlaskState
 
         _turns.AdvanceTurn();
         TurnSpent?.Invoke();
+        if (!canContinue())
+        {
+            return true;
+        }
+
         _wick.Restore(LevelTuning.FlaskRestore);
         return true;
     }
@@ -74,10 +86,12 @@ public sealed class OilFlaskCollectionState
     public event Action<int> TurnSpent;
     public IReadOnlyList<GridCoord> Cells => _flasks.Select(flask => flask.Cell).ToArray();
 
-    public bool TryBeginLift(GridCoord playerCell)
+    public bool TryBeginLift(GridCoord playerCell) => TryBeginLift(playerCell, () => true);
+
+    public bool TryBeginLift(GridCoord playerCell, Func<bool> canContinue)
     {
         var flask = _flasks.FirstOrDefault(candidate => candidate.IsAvailableAt(playerCell));
-        return flask is not null && flask.TryBeginLift(playerCell);
+        return flask is not null && flask.TryBeginLift(playerCell, canContinue);
     }
 
     public bool IsCollected(GridCoord cell) => _flasks.FirstOrDefault(flask => flask.Cell == cell)?.IsCollected ?? false;
@@ -102,6 +116,11 @@ public sealed class OilFlaskCollectionState
 
 public sealed record OilFlaskCollectionSnapshot(bool[] Collected);
 
+public static class OilFlaskInputPolicy
+{
+    public static bool ShouldUnlockAfterLift(bool isTerminal) => !isTerminal;
+}
+
 public partial class OilFlaskController : Node2D
 {
     private static readonly Vector2 BoardOrigin = new(152, 104);
@@ -112,6 +131,7 @@ public partial class OilFlaskController : Node2D
     private BoardRenderer _visibility;
     private Action<int> _onTurnSpent;
     private Action _onLiftCompleted;
+    private Func<bool> _canContinueLift;
     private OilFlaskCollectionState _state;
     private readonly List<Node2D> _markers = new();
 
@@ -124,6 +144,7 @@ public partial class OilFlaskController : Node2D
         BoardRenderer visibility,
         Action<int> onTurnSpent,
         Action onLiftCompleted,
+        Func<bool> canContinueLift,
         IEnumerable<GridCoord> flaskCells)
     {
         _wick = wick;
@@ -132,6 +153,7 @@ public partial class OilFlaskController : Node2D
         _visibility = visibility;
         _onTurnSpent = onTurnSpent;
         _onLiftCompleted = onLiftCompleted;
+        _canContinueLift = canContinueLift;
         _state = new OilFlaskCollectionState(_wick.State, _turns, flaskCells);
         _state.TurnSpent += OnTurnSpent;
         Position = Vector2.Zero;
@@ -147,10 +169,13 @@ public partial class OilFlaskController : Node2D
 
         _player.LockInput();
         _visibility.ForceDarkness();
-        var lifted = _state.TryBeginLift(playerCell);
+        var lifted = _state.TryBeginLift(playerCell, _canContinueLift);
         RefreshMarkers();
         _onLiftCompleted?.Invoke();
-        _player.UnlockInput();
+        if (OilFlaskInputPolicy.ShouldUnlockAfterLift(!(_canContinueLift?.Invoke() ?? true)))
+        {
+            _player.UnlockInput();
+        }
         return lifted;
     }
 

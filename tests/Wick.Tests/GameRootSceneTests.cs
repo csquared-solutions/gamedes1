@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using System.Linq;
+using Wick.Data;
 using Xunit;
 
 namespace Wick.Tests;
@@ -11,39 +11,18 @@ public sealed class GameRootSceneTests
     public void GameRoot_InstancesTheRuntimeControllers()
     {
         var scenePath = FindProjectFile("scenes", "game", "GameRoot.tscn");
-        var scene = File.ReadAllText(scenePath);
+        var scene = GodotTextSceneContract.ParseFile(scenePath);
 
-        Assert.Contains("res://scripts/core/LevelManager.cs", scene);
-        Assert.Contains("res://scenes/actors/Player.tscn", scene);
-        Assert.Contains("res://scenes/actors/Lamp.tscn", scene);
-        Assert.Contains("res://scenes/goals/Stair.tscn", scene);
-        Assert.Contains("res://scripts/hazards/HazardSystem.cs", scene);
-        Assert.Contains("res://scenes/hazards/Crawler.tscn", scene);
-        Assert.Contains("res://scenes/hazards/Moth.tscn", scene);
-        Assert.Contains("res://scenes/pickups/OilFlask.tscn", scene);
-        Assert.Contains("res://scenes/ui/Hud.tscn", scene);
-        Assert.Contains("[node name=\"Player\" parent=\".\"", scene);
-        Assert.Contains("[node name=\"Lamp\" parent=\".\"", scene);
-        Assert.Contains("[node name=\"Stair\" parent=\".\"", scene);
-        Assert.Contains("[node name=\"Crawler\" parent=\".\"", scene);
-        Assert.Contains("[node name=\"Moth\" parent=\".\"", scene);
-        Assert.Contains("[node name=\"HazardSystem\" type=\"Node\" parent=\".\"]", scene);
-        Assert.Contains("[node name=\"OilFlask\" parent=\".\"", scene);
-        Assert.Contains("[node name=\"Hud\" parent=\".\"", scene);
-        Assert.Contains("[node name=\"LevelManager\" type=\"Node\" parent=\".\"]", scene);
+        CampaignRuntimeContract.ValidateGameRoot(scene);
     }
 
     [Fact]
     public void Hud_ContainsVisiblePracticeAndUndoKeyboardStatus()
     {
         var scenePath = FindProjectFile("scenes", "ui", "Hud.tscn");
-        var scene = File.ReadAllText(scenePath);
+        var scene = GodotTextSceneContract.ParseFile(scenePath);
 
-        Assert.Contains("[node name=\"CampaignStatus\"", scene);
-        Assert.Contains("[node name=\"PracticeStatus\"", scene);
-        Assert.Contains("[node name=\"Controls\"", scene);
-        Assert.Contains("P PRACTICE", scene);
-        Assert.Contains("Z UNDO", scene);
+        CampaignRuntimeContract.ValidateHud(scene);
     }
 
     private static string FindProjectFile(params string[] relativePath)

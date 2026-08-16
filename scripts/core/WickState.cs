@@ -16,6 +16,12 @@ public sealed class WickState : IPlayerWick
     public event Action<int> WickChanged;
     public event Action Depleted;
 
+    public void StartFreshLevel(int startingWick, bool freezeDecrease)
+    {
+        Initialize(startingWick);
+        SetDecreaseFrozen(freezeDecrease);
+    }
+
     public void Initialize(int startingWick)
     {
         _flareTurnsRemaining = 0;

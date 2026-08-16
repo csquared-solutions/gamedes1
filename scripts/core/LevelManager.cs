@@ -11,7 +11,7 @@ namespace Wick.Core;
 public partial class LevelManager : Node
 {
     private readonly LevelLoader _loader = new();
-    private readonly CampaignProgressState _progress = new(7);
+    private readonly CampaignSessionState _session = new(7);
     private readonly PracticeModeState _practice = new();
     private BoardState _board;
     private VisibilitySystem _visibility;
@@ -32,8 +32,8 @@ public partial class LevelManager : Node
 
     public bool IsPracticeMode => _practice.IsEnabled;
     public bool CanUndo => _practice.CanUndo;
-    public int CurrentLevelIndex => _progress.CurrentLevelIndex;
-    public bool IsRunComplete => _progress.IsComplete;
+    public int CurrentLevelIndex => _session.ActiveLevelIndex;
+    public bool IsRunComplete => _session.IsActiveComplete;
     public int ReportedRemainingWick => _reportedRemainingWick;
 
     public override void _Ready()
@@ -49,7 +49,7 @@ public partial class LevelManager : Node
         _oilFlask = GetNode<Pickups.OilFlaskController>("../OilFlask");
 
         _player.CellChanged += OnPlayerMoved;
-        _player.RestartRequested += RestartRun;
+        _player.RestartRequested += OnRestartRequested;
         _player.FlareRequested += OnFlareRequested;
         _player.LampChanged += OnLampChanged;
         _player.PracticeModeToggleRequested += TogglePracticeMode;
@@ -62,30 +62,41 @@ public partial class LevelManager : Node
         LoadCampaignLevel(1);
     }
 
-    public void LoadCampaignLevel(int index) => LoadCampaignLevel(index, preserveUndo: false);
+    public void LoadCampaignLevel(int index)
+    {
+        _session.LoadMainLevel(index);
+        _practice.SetEnabled(false);
+        LoadActiveLevel(index, preserveUndo: false);
+    }
 
     public void LoadLevel(int index) => LoadCampaignLevel(index);
 
     public void SetPracticeMode(bool enabled)
     {
+        if (enabled == IsPracticeMode)
+        {
+            return;
+        }
+
         _practice.SetEnabled(enabled);
-        _wick?.SetDecreaseFrozen(enabled);
+        var transition = _session.SetPracticeMode(enabled);
         _pendingAction = null;
+        LoadActiveLevel(transition.LevelIndex, preserveUndo: false);
     }
 
     public void RestartLevel()
     {
         if (_currentLevel is not null)
         {
-            LoadCampaignLevel(_currentLevel.Index);
+            LoadActiveLevel(_session.RestartCurrentLevel().LevelIndex, preserveUndo: false);
         }
     }
 
     public void RestartRun()
     {
-        _progress.RestartRun();
+        _practice.SetEnabled(false);
         _reportedRemainingWick = -1;
-        LoadCampaignLevel(1);
+        LoadActiveLevel(_session.RestartRun().LevelIndex, preserveUndo: false);
     }
 
     public bool TryUndo()
@@ -97,7 +108,8 @@ public partial class LevelManager : Node
 
         if (_currentLevel.Index != snapshot.LevelIndex)
         {
-            LoadCampaignLevel(snapshot.LevelIndex, preserveUndo: true);
+            _session.RestoreActive(snapshot.LevelIndex, snapshot.IsCampaignComplete);
+            LoadActiveLevel(snapshot.LevelIndex, preserveUndo: true);
         }
 
         var flags = snapshot.Restore(
@@ -108,7 +120,7 @@ public partial class LevelManager : Node
             _hazards.State,
             _oilFlask.State,
             _visibility);
-        _progress.Restore(flags.LevelIndex, flags.IsCampaignComplete);
+        _session.RestoreActive(flags.LevelIndex, flags.IsCampaignComplete);
         _isTerminal = flags.IsTerminal;
         _reportedRemainingWick = flags.ReportedRemainingWick;
         _player.RestoreCell(snapshot.PlayerCell);
@@ -116,7 +128,7 @@ public partial class LevelManager : Node
         _hazards.RestoreSnapshot(snapshot.Hazards);
         _oilFlask.RestoreSnapshot(snapshot.Flasks);
         _boardRenderer.RestoreDrawingState(snapshot.Lamp.Cell);
-        if (_isTerminal || _progress.IsComplete)
+        if (_isTerminal || _session.IsActiveComplete)
         {
             _player.LockInput();
         }
@@ -128,16 +140,14 @@ public partial class LevelManager : Node
         return true;
     }
 
-    private void LoadCampaignLevel(int index, bool preserveUndo)
+    private void LoadActiveLevel(int index, bool preserveUndo)
     {
         ActivateCampaignScene(index);
         _currentLevel = _campaignScene.Definition;
-        _progress.Restore(index, isComplete: false);
         _board = new BoardState(_currentLevel.Width, _currentLevel.Height, _currentLevel.Walls);
         _visibility = new VisibilitySystem(_board);
         _lamp.Initialize(_currentLevel.LampStart);
-        _wick.Initialize(_currentLevel.StartingWick);
-        _wick.SetDecreaseFrozen(IsPracticeMode);
+        _wick.StartFreshLevel(_currentLevel.StartingWick, IsPracticeMode);
         _turns.Reset();
         _player.Initialize(_board, _wick, _turns, _lamp, _currentLevel.PlayerStart, _visibility);
         _player.UnlockInput();
@@ -160,6 +170,7 @@ public partial class LevelManager : Node
             _boardRenderer,
             OnFlaskTurnSpent,
             RefreshTacticalState,
+            () => !_isTerminal,
             _currentLevel.Flasks);
         _isTerminal = false;
         if (!preserveUndo)
@@ -191,6 +202,18 @@ public partial class LevelManager : Node
 
     private void TogglePracticeMode() => SetPracticeMode(!IsPracticeMode);
 
+    private void OnRestartRequested()
+    {
+        var transition = _session.HandleRestartRequest();
+        if (transition.StartsNewRun)
+        {
+            _practice.SetEnabled(false);
+            _reportedRemainingWick = -1;
+        }
+
+        LoadActiveLevel(transition.LevelIndex, preserveUndo: false);
+    }
+
     private void OnUndoRequested() => TryUndo();
 
     private void OnActionStarting()
@@ -218,13 +241,16 @@ public partial class LevelManager : Node
         _oilFlask.State,
         _visibility,
         _isTerminal,
-        _progress.IsComplete,
+        _session.IsActiveComplete,
         _reportedRemainingWick);
 
     private void OnPlayerMoved(GridCoord cell)
     {
         RefreshTacticalState();
-        _stair.TryEnter(cell);
+        if (StairEntryRule.CanEnter(_currentLevel, cell, _lamp.State.IsCarried))
+        {
+            _stair.TryEnter(cell);
+        }
         if (_isTerminal || _wick.IsDepleted)
         {
             return;
@@ -300,7 +326,7 @@ public partial class LevelManager : Node
         _player.LockInput();
         if (!IsPracticeMode)
         {
-            CallDeferred(nameof(RestartRun));
+            CallDeferred(nameof(RestartLevel));
         }
     }
 
@@ -325,9 +351,9 @@ public partial class LevelManager : Node
             return;
         }
 
-        if (_progress.AdvanceAfterClear())
+        if (_session.AdvanceAfterClear())
         {
-            LoadCampaignLevel(_progress.CurrentLevelIndex, preserveUndo: true);
+            LoadActiveLevel(_session.ActiveLevelIndex, preserveUndo: true);
             return;
         }
 

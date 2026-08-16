@@ -121,3 +121,84 @@ The GDD's rough 30-45-step intent cannot mean 30-45 wick-consuming turns for lev
 - The internal playtest evidence is deterministic simulation plus content review, as permitted by the task ruling. Human launch validation is still needed for subjective visibility legibility, discovery, and pacing.
 - The reviewed routes require taking all authored flasks and lose when all are skipped. This satisfies fixed placement and meaningful resource pressure, but human testing should determine whether the intended flask choices feel sufficiently optional.
 - Distinct final hazard silhouettes remain a Task 8 art deliverable; Task 7 preserves shape/indicator information and does not rely on color alone.
+
+## Fix Round 1
+
+### Changes and Root Causes
+
+1. **Practice isolation:** `SetPracticeMode` previously toggled wick freezing on the live campaign objects, so free movement, hazards, collected flasks, and restored wick survived when practice was disabled. `CampaignSessionState` now owns separate main/practice progression. Entering or leaving practice emits a fresh-level transition and `LevelManager` reconstructs the current level. `WickState.StartFreshLevel` resets wick/flare/freeze state, so a practice flask gain from 12 to 18 returns to the authored 12 in campaign mode.
+2. **Level 1 teaching:** The original open layout had no reachable degree-one branch, and the teaching proof did not exercise placement. Level 1 now has an actual reachable dead-end at the fork. Separate finite winning routes prove the flare/crawler-stall/dark-lift lesson and a late lamp-placement corridor lesson. Keeping these as separate teaching routes is intentional: forcing flare, stall, two lifts, and late placement into one exact-economy script made the tutorial fatal rather than instructive.
+3. **Route-choice proof:** The first simulation bounded cycles by following flasks only in array order. The revised bounded algorithm enumerates every flask subset and every permutation within that subset, while exploring every shortest-path move toward each selected waypoint. Each plan retains real wick, hazard, flare, placement, automatic pickup, and target-band rules. The per-plan action bound is `starting wick + selected flasks * 6 - target minimum`; cyclic detours remain excluded, preventing the level-4 frontier blow-up.
+4. **Individual flask review:** The scenario review now records literal win counts for every subset bitmask and visit order, rather than inferring individual choices from all-versus-none runs.
+5. **Outcome-based lamp necessity:** `StairEntryRule` is consumed by both production and simulation. Levels 3-7 reject stair entry while the lamp is carried. Simulations with placement actions disabled now fail under this real rule across every flask subset/order; success is no longer rejected only by `RequiresLampPlacement` goal metadata.
+6. **Terminal flask lift:** A synchronous smother/depletion callback can now stop a lift immediately. No later spend or `+6` restoration occurs, and `OilFlaskInputPolicy` prevents the controller from unlocking input while terminal. Practice terminal state remains locked while the pre-lock `Z`, `P`, and `R` controls remain available.
+7. **Restart semantics:** `R` now asks `CampaignSessionState` for a current-level fresh-copy transition. Campaign progress is preserved. A level-1 new run occurs only through `RestartRun` or an `R` request after main campaign completion; practice completion restarts its active practice level rather than resetting the main run. Main-mode loss also reloads the current level instead of level 1.
+8. **Runtime contracts:** Source substring checks were replaced by `GodotTextSceneContract`, `CampaignSceneManifest`, and `CampaignRuntimeContract`. The production-consumed manifest supplies all campaign paths; the parser resolves declared resources, nodes, scripts, properties, indices, and root structure. A malformed parented level root is rejected by behavior, while all real level, GameRoot, and HUD scenes validate.
+
+### RED Evidence
+
+- Initial focused command: `dotnet test tests\Wick.Tests\Wick.Tests.csproj --no-restore --filter "FullyQualifiedName~CampaignProgressionTests|FullyQualifiedName~OilFlaskStateTests|FullyQualifiedName~LevelSolvabilityTests|FullyQualifiedName~CampaignSimulationTests|FullyQualifiedName~GameRootSceneTests" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Failed compilation with missing `CampaignSessionState`, `GodotTextSceneContract`, `CampaignRuntimeContract`, `CampaignSceneManifest`, `StairEntryRule`, terminal-aware flask overload/policy, `AllowLampPlacement`, and route-variant review APIs.
+- First behavioral run of the same group completed without hanging but failed 11 tests. It exposed a coordinate-only outer simulation success check that bypassed the new stair rule; levels 3-7 were reported as winning without placement. Removing that duplicate check made every no-placement outcome fail under `StairEntryRule`.
+- Combined Level 1 teaching experiment: `dotnet test ... --filter "FullyQualifiedName~LevelOne_HasAWinningTeachingRoute" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Failed after 1,367 bounded states (peak frontier 369; 348 depleted; 334 smothered), demonstrating that requiring every teaching verb in one route was incompatible with the exact economy/hazard lesson. Splitting the GDD beats into two observable winning routes resolved the design error without changing exact resource values.
+- Individual subset diagnostic failed intentionally with the complete literal matrix: `dotnet test ... --filter "FullyQualifiedName~Campaign_IndividualFlaskSubsets" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Completed in 10 seconds and reported all 128 reviewed subset/order plans; those values were then converted into regression expectations.
+- Fresh transition contract: `dotnet test ... --filter "FullyQualifiedName~CampaignProgressionTests" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Failed compilation because transitions did not yet expose `LevelIndex`, `StartsFreshLevelCopy`, `StartsNewRun`, or `HandleRestartRequest`.
+- Practice wick isolation: `dotnet test ... --filter "FullyQualifiedName~FreshCampaignCopyAfterPractice" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Failed compilation because `WickState.StartFreshLevel` did not exist.
+- Malformed scene contract: `dotnet test ... --filter "FullyQualifiedName~CampaignSceneContract_Rejects" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Failed because no exception was thrown for a level root incorrectly parented under `.`.
+
+### GREEN Evidence
+
+- Level 1 teaching routes: `dotnet test ... --filter "FullyQualifiedName~LevelOne_" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Passed 3/3 in 220 ms.
+- Practice/progression isolation: `dotnet test ... --filter "FullyQualifiedName~PracticeModeTests|FullyQualifiedName~CampaignProgressionTests" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Passed 10/10 in 122 ms.
+- Parsed runtime contracts: `dotnet test ... --filter "FullyQualifiedName~CampaignSceneContract_Rejects|FullyQualifiedName~Campaign_RuntimeScenePathsResolve|FullyQualifiedName~GameRootSceneTests" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Passed 4/4 in 65 ms.
+- All Fix Round 1 coverage: `dotnet test tests\Wick.Tests\Wick.Tests.csproj --no-restore --filter "FullyQualifiedName~CampaignSimulationTests|FullyQualifiedName~CampaignScenarioReviewTests|FullyQualifiedName~CampaignProgressionTests|FullyQualifiedName~PracticeModeTests|FullyQualifiedName~OilFlaskStateTests|FullyQualifiedName~LevelSolvabilityTests|FullyQualifiedName~GameRootSceneTests" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Passed 62/62 in 13 seconds.
+- Full suite: `dotnet test tests\Wick.Tests\Wick.Tests.csproj --no-restore --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Passed 95/95 in 13 seconds; the blame collector confirmed all tests finished normally.
+- Build: `dotnet build Wick.csproj --no-restore --verbosity minimal`
+  - Succeeded in 1.26 seconds with 0 warnings and 0 errors.
+- `git diff --check`
+  - Completed with no whitespace errors. Git emitted only the repository's existing LF-to-CRLF notices.
+
+### Updated Campaign and GDD Scenario Review
+
+The exact GDD values remain unchanged.
+
+| Level | Wick | Flasks | Crawlers | Moths | Target | Route plans | Winning subset/order outcomes | No-placement outcome |
+|---|---:|---:|---:|---:|---:|---:|---|---|
+| 1 | 12 | 2 | 2 | 0 | 2-4 | 5 | `11`: 2/2 | Not required; late teaching route wins |
+| 2 | 12 | 2 | 2 | 1 | 2-4 | 5 | `11`: 2/2 | Not required |
+| 3 | 12 | 2 | 3 | 1 | 2-4 | 5 | `11`: 2/2 | 0 wins |
+| 4 | 14 | 3 | 3 | 2 | 3-6 | 16 | `111`: 6/6 | 0 wins |
+| 5 | 14 | 3 | 3 | 2 | 3-6 | 16 | `111`: 6/6 | 0 wins |
+| 6 | 16 | 3 | 4 | 3 | 3-6 | 16 | `111`: 6/6 | 0 wins |
+| 7 | 16 | 4 | 4 | 3 | 3-6 | 65 | `0001` 1/1; `0011` 1/2; `0101` 2/2; `0111` 1/6; `1001` 1/2; `1011` 1/6; `1101` 3/6; `1111` 1/24 | 0 wins |
+
+Bit `1` means that authored flask is taken; each denominator is the number of visit-order permutations reviewed for that subset. Every omitted and included individual flask case is represented. Levels 1-6 still require their full flask sets in the bounded winning outcomes, but they now prove multiple visit orders rather than one array-ordered script. Level 7 supports several individual/mixed choices and demonstrates order-sensitive outcomes.
+
+The earlier take-all/skip-all/early/late matrix remains green: take-all finishes at wick `2, 2, 3, 3, 3, 5, 3`; skip-all loses all seven; early placement loses all seven; late placement wins levels 3-7 at the same wick values. Level 1 additionally has a placement-only teaching route after action 12; combining it with the separate flare lesson is intentionally not required.
+
+### Fix Round 1 Self-Review
+
+- Confirmed exact starting wick, flask, crawler, moth, target-band, grid-size, and `+6` restoration tests are unchanged and green.
+- Confirmed main and practice progression are separate, every mode switch reloads all gameplay collaborators, and the fresh-wick state test catches practice restoration leakage.
+- Confirmed levels 3-7 use the same production stair rule in runtime and simulation, and exhaustive no-placement reviews have zero wins.
+- Confirmed the search remains finite: at most 65 waypoint plans for level 7, each bounded by selected-flask economy and 20,000 states; no cyclic free movement was restored.
+- Confirmed flask terminal callbacks stop the lift and keep input locked before any later restoration.
+- Confirmed `R` no longer calls whole-run restart during active campaign play.
+- Confirmed no scene/HUD test reads raw source text to assert substrings; all use parsed runtime contracts.
+- Reviewed all changed files and found no unrelated refactoring or new scope.
+
+### Fix Round 1 Concerns
+
+- Godot is still unavailable on PATH, so live engine startup and human visual/playtest validation remain external follow-up. The parser validates this project's consumed serialization contract but is not a replacement for Godot's complete scene loader.
+- Levels 1-6 have route-order choice but still require every authored flask in the bounded winning scenarios. This is now measured content behavior rather than a test limitation; human playtesting should confirm that timing/path decisions provide sufficient agency.
+- The finite proof covers all flask subsets, all visit permutations, all shortest-path alternatives within each segment, and all bounded lamp timings. It intentionally excludes arbitrary cyclic detours that caused the original nontermination and cannot improve the finite wick budget.

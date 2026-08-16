@@ -27,7 +27,7 @@ public sealed class LevelLoader
     public string GetScenePath(int index)
     {
         Load(index);
-        return $"res://scenes/levels/Level{index:00}.tscn";
+        return CampaignSceneManifest.Get(index).ResourcePath;
     }
 
     private static IEnumerable<LevelDefinition> CreateCampaign()
@@ -40,7 +40,11 @@ public sealed class LevelLoader
             interiorWalls: Combine(
                 VerticalWall(5, 1, 5, 3),
                 VerticalWall(5, 8, 11, 9),
-                VerticalWall(11, 2, 8, 6)));
+                VerticalWall(11, 2, 8, 6),
+                new[]
+                {
+                    new GridCoord(3, 4), new GridCoord(4, 3)
+                }));
         yield return CreateLevel(
             2, 12, new GridCoord(2, 9), new GridCoord(14, 3),
             crawlers: new[] { new GridCoord(2, 11), new GridCoord(4, 11) },

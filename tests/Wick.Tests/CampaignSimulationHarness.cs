@@ -19,7 +19,15 @@ internal sealed record SimulationRequirements(
     int MinimumLampPlacementAction = 0,
     int MaximumLampPlacementAction = 45,
     bool FollowAuthoredRoute = false,
-    bool RequireLampPlacement = false);
+    bool RequireLampPlacement = false,
+    bool AllowLampPlacement = true,
+    int FlaskMask = -1,
+    int[]? FlaskVisitOrder = null);
+
+internal sealed record FlaskRouteReview(
+    int FlaskMask,
+    IReadOnlyList<int> FlaskVisitOrder,
+    SimulationResult Result);
 
 internal sealed record SimulationResult(
     bool Won,
@@ -49,6 +57,56 @@ internal static class CampaignSimulationHarness
         SimulationRequirements requirements,
         int maxActions = 45,
         int maxStates = 350_000)
+    {
+        SimulationResult? lastFailure = null;
+        foreach (var plan in CreateRoutePlans(level, requirements))
+        {
+            var result = FindWinningPlanForRoute(
+                level,
+                requirements with
+                {
+                    FollowAuthoredRoute = true,
+                    FlaskMask = plan.Mask,
+                    FlaskVisitOrder = plan.Order
+                },
+                GetFiniteActionBound(level, plan.Mask, maxActions),
+                maxStates);
+            if (result.Won)
+            {
+                return result;
+            }
+
+            lastFailure = result;
+        }
+
+        return lastFailure ?? throw new InvalidOperationException("No bounded campaign route plans were generated.");
+    }
+
+    public static IReadOnlyList<FlaskRouteReview> ReviewFlaskRouteVariants(
+        LevelDefinition level,
+        SimulationRequirements requirements,
+        int maxActions = 45,
+        int maxStatesPerPlan = 20_000) => CreateRoutePlans(level, requirements)
+        .Select(plan => new FlaskRouteReview(
+            plan.Mask,
+            plan.Order,
+            FindWinningPlanForRoute(
+                level,
+                requirements with
+                {
+                    FollowAuthoredRoute = true,
+                    FlaskMask = plan.Mask,
+                    FlaskVisitOrder = plan.Order
+                },
+                GetFiniteActionBound(level, plan.Mask, maxActions),
+                maxStatesPerPlan)))
+        .ToArray();
+
+    private static SimulationResult FindWinningPlanForRoute(
+        LevelDefinition level,
+        SimulationRequirements requirements,
+        int maxActions,
+        int maxStates)
     {
         var board = new BoardState(level.Width, level.Height, level.Walls);
         var routeDistances = CreateRouteDistanceMaps(level, board);
@@ -86,7 +144,8 @@ internal static class CampaignSimulationHarness
                     continue;
                 }
 
-                if (next.PlayerCell == level.StairCell && MeetsGoal(level, next, requirements))
+                if (StairEntryRule.CanEnter(level, next.PlayerCell, next.Lamp.IsCarried) &&
+                    MeetsGoal(level, next, requirements))
                 {
                     return ToResult(next, explored);
                 }
@@ -97,7 +156,7 @@ internal static class CampaignSimulationHarness
                 }
             }
 
-            var shouldPlaceLamp = (level.RequiresLampPlacement || requirements.RequireLampPlacement) && !node.PlacedLamp;
+            var shouldPlaceLamp = requirements.AllowLampPlacement && !node.PlacedLamp;
             var placed = shouldPlaceLamp ? TryPlaceLamp(level, board, node, requirements, diagnostics) : null;
             if (placed is not null)
             {
@@ -169,7 +228,9 @@ internal static class CampaignSimulationHarness
         SearchDiagnostics diagnostics)
     {
         var session = Restore(level, board, node);
-        if (requirements.SkipAllFlasks && level.Flasks.Contains(session.Player.Cell + direction))
+        var destination = session.Player.Cell + direction;
+        var flaskIndex = Array.IndexOf(level.Flasks, destination);
+        if (flaskIndex >= 0 && (requirements.FlaskMask & (1 << flaskIndex)) == 0)
         {
             return null;
         }
@@ -181,7 +242,7 @@ internal static class CampaignSimulationHarness
         }
 
         var actionCount = node.ActionCount + 1;
-        if (session.Player.Cell == level.StairCell)
+        if (StairEntryRule.CanEnter(level, session.Player.Cell, session.Lamp.IsCarried))
         {
             return Capture(session, node, actionCount, routeName);
         }
@@ -352,7 +413,7 @@ internal static class CampaignSimulationHarness
             return false;
         }
 
-        if ((level.RequiresLampPlacement || requirements.RequireLampPlacement) && !node.PlacedLamp ||
+        if (requirements.RequireLampPlacement && !node.PlacedLamp ||
             requirements.RequireFlare && !node.FiredFlare ||
             requirements.RequireCrawlerStall && !node.ObservedCrawlerStall ||
             node.FlasksCollected < requirements.MinimumFlasksCollected)
@@ -417,10 +478,10 @@ internal static class CampaignSimulationHarness
         IReadOnlyDictionary<GridCoord, Dictionary<GridCoord, int>> distanceMaps,
         SimulationRequirements requirements)
     {
-        var flaskIndex = requirements.SkipAllFlasks
-            ? -1
-            : Array.FindIndex(node.Flasks.Collected, collected => !collected);
-        var target = flaskIndex >= 0 ? level.Flasks[flaskIndex] : level.StairCell;
+        var targetIndex = requirements.FlaskVisitOrder?.FirstOrDefault(
+            index => !node.Flasks.Collected[index],
+            -1) ?? -1;
+        var target = targetIndex >= 0 ? level.Flasks[targetIndex] : level.StairCell;
         var distances = distanceMaps[target];
         var next = node.PlayerCell + direction;
         return distances.TryGetValue(node.PlayerCell, out var currentDistance) &&
@@ -466,6 +527,65 @@ internal static class CampaignSimulationHarness
         }
 
         return string.Join('+', segments);
+    }
+
+    private static IReadOnlyList<(int Mask, int[] Order)> CreateRoutePlans(
+        LevelDefinition level,
+        SimulationRequirements requirements)
+    {
+        if (requirements.FlaskVisitOrder is not null)
+        {
+            var mask = requirements.FlaskMask >= 0
+                ? requirements.FlaskMask
+                : requirements.FlaskVisitOrder.Aggregate(0, (value, index) => value | (1 << index));
+            return new[] { (mask, requirements.FlaskVisitOrder.ToArray()) };
+        }
+
+        var fullMask = (1 << level.Flasks.Length) - 1;
+        IEnumerable<int> masks = requirements.SkipAllFlasks
+            ? new[] { 0 }
+            : requirements.CollectAllFlasks
+                ? new[] { fullMask }
+                : Enumerable.Range(0, fullMask + 1);
+        var plans = new List<(int Mask, int[] Order)>();
+        foreach (var mask in masks)
+        {
+            var selected = Enumerable.Range(0, level.Flasks.Length)
+                .Where(index => (mask & (1 << index)) != 0)
+                .ToArray();
+            foreach (var order in Permute(selected))
+            {
+                plans.Add((mask, order));
+            }
+        }
+
+        return plans;
+    }
+
+    private static IEnumerable<int[]> Permute(int[] values)
+    {
+        if (values.Length == 0)
+        {
+            yield return Array.Empty<int>();
+            yield break;
+        }
+
+        for (var index = 0; index < values.Length; index++)
+        {
+            var remaining = values.Where((_, candidate) => candidate != index).ToArray();
+            foreach (var suffix in Permute(remaining))
+            {
+                yield return new[] { values[index] }.Concat(suffix).ToArray();
+            }
+        }
+    }
+
+    private static int GetFiniteActionBound(LevelDefinition level, int flaskMask, int requestedMaximum)
+    {
+        var selectedFlasks = Enumerable.Range(0, level.Flasks.Length)
+            .Count(index => (flaskMask & (1 << index)) != 0);
+        var resourceBound = level.StartingWick + (selectedFlasks * LevelTuning.FlaskRestore) - level.TargetCompletionWickMin;
+        return Math.Min(requestedMaximum, resourceBound);
     }
 
     private static string GetKey(SimulationNode node)

@@ -94,11 +94,38 @@ public sealed class LevelSolvabilityTests
         {
             var resourcePath = loader.GetScenePath(level.Index);
             var filePath = Path.Combine(projectRoot, resourcePath["res://".Length..].Replace('/', Path.DirectorySeparatorChar));
-            Assert.True(File.Exists(filePath), $"Missing runtime campaign scene: {resourcePath}");
-            var scene = File.ReadAllText(filePath);
-            Assert.Contains("res://scripts/data/CampaignLevelScene.cs", scene);
-            Assert.Contains($"index = {level.Index}", scene, StringComparison.OrdinalIgnoreCase);
+            var scene = GodotTextSceneContract.ParseFile(filePath);
+            CampaignRuntimeContract.ValidateLevelScene(scene, CampaignSceneManifest.Get(level.Index));
         }
+    }
+
+    [Fact]
+    public void CampaignSceneContract_RejectsStructurallyMisparentedLevelRoot()
+    {
+        const string malformed = """
+            [gd_scene format=3]
+            [ext_resource type="Script" path="res://scripts/data/CampaignLevelScene.cs" id="1_level"]
+            [node name="Level01" type="Node" parent="."]
+            script = ExtResource("1_level")
+            index = 1
+            """;
+        var scene = GodotTextSceneContract.Parse(malformed);
+
+        Assert.Throws<InvalidDataException>(() =>
+            CampaignRuntimeContract.ValidateLevelScene(scene, CampaignSceneManifest.Get(1)));
+    }
+
+    [Fact]
+    public void LevelOne_HasReachableTopologicalDeadEndTeachingBranch()
+    {
+        var level = new LevelLoader().Load(1);
+        var board = new BoardState(level.Width, level.Height, level.Walls);
+        var reachable = FindReachableCells(board, level.PlayerStart);
+
+        Assert.Contains(reachable, cell =>
+            cell != level.PlayerStart &&
+            cell != level.StairCell &&
+            Directions.Count(direction => board.IsWalkable(cell + direction)) == 1);
     }
 
     [Theory]
@@ -156,6 +183,27 @@ public sealed class LevelSolvabilityTests
         }
 
         return null;
+    }
+
+    private static IReadOnlyCollection<GridCoord> FindReachableCells(BoardState board, GridCoord start)
+    {
+        var queue = new Queue<GridCoord>();
+        var visited = new HashSet<GridCoord> { start };
+        queue.Enqueue(start);
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            foreach (var direction in Directions)
+            {
+                var next = current + direction;
+                if (board.IsWalkable(next) && visited.Add(next))
+                {
+                    queue.Enqueue(next);
+                }
+            }
+        }
+
+        return visited;
     }
 
     private static string FindProjectRoot()
