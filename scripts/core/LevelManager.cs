@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using Wick.Actors;
 using Wick.Board;
@@ -10,9 +11,12 @@ namespace Wick.Core;
 public partial class LevelManager : Node
 {
     private readonly LevelLoader _loader = new();
+    private readonly CampaignProgressState _progress = new(7);
+    private readonly PracticeModeState _practice = new();
     private BoardState _board;
     private VisibilitySystem _visibility;
     private LevelDefinition _currentLevel;
+    private CampaignLevelScene _campaignScene;
     private PlayerController _player;
     private LampController _lamp;
     private StairController _stair;
@@ -22,6 +26,15 @@ public partial class LevelManager : Node
     private GameEvents _events;
     private HazardSystem _hazards;
     private Pickups.OilFlaskController _oilFlask;
+    private GameplaySnapshot _pendingAction;
+    private bool _isTerminal;
+    private int _reportedRemainingWick = -1;
+
+    public bool IsPracticeMode => _practice.IsEnabled;
+    public bool CanUndo => _practice.CanUndo;
+    public int CurrentLevelIndex => _progress.CurrentLevelIndex;
+    public bool IsRunComplete => _progress.IsComplete;
+    public int ReportedRemainingWick => _reportedRemainingWick;
 
     public override void _Ready()
     {
@@ -36,24 +49,98 @@ public partial class LevelManager : Node
         _oilFlask = GetNode<Pickups.OilFlaskController>("../OilFlask");
 
         _player.CellChanged += OnPlayerMoved;
-        _player.RestartRequested += RestartLevel;
+        _player.RestartRequested += RestartRun;
         _player.FlareRequested += OnFlareRequested;
         _player.LampChanged += OnLampChanged;
+        _player.PracticeModeToggleRequested += TogglePracticeMode;
+        _player.UndoRequested += OnUndoRequested;
+        _player.ActionStarting += OnActionStarting;
+        _player.ActionFinished += OnActionFinished;
         _stair.Reached += OnStairReached;
         _events.Connect(GameEvents.SignalName.LightOut, Callable.From<string>(OnLightOut));
 
-        LoadLevel(1);
+        LoadCampaignLevel(1);
     }
 
-    public void LoadLevel(int index)
+    public void LoadCampaignLevel(int index) => LoadCampaignLevel(index, preserveUndo: false);
+
+    public void LoadLevel(int index) => LoadCampaignLevel(index);
+
+    public void SetPracticeMode(bool enabled)
     {
-        _currentLevel = _loader.Load(index);
+        _practice.SetEnabled(enabled);
+        _wick?.SetDecreaseFrozen(enabled);
+        _pendingAction = null;
+    }
+
+    public void RestartLevel()
+    {
+        if (_currentLevel is not null)
+        {
+            LoadCampaignLevel(_currentLevel.Index);
+        }
+    }
+
+    public void RestartRun()
+    {
+        _progress.RestartRun();
+        _reportedRemainingWick = -1;
+        LoadCampaignLevel(1);
+    }
+
+    public bool TryUndo()
+    {
+        if (!_practice.TryTakeUndo(out var snapshot))
+        {
+            return false;
+        }
+
+        if (_currentLevel.Index != snapshot.LevelIndex)
+        {
+            LoadCampaignLevel(snapshot.LevelIndex, preserveUndo: true);
+        }
+
+        var flags = snapshot.Restore(
+            _player.State,
+            _lamp.State,
+            _wick.State,
+            _turns.State,
+            _hazards.State,
+            _oilFlask.State,
+            _visibility);
+        _progress.Restore(flags.LevelIndex, flags.IsCampaignComplete);
+        _isTerminal = flags.IsTerminal;
+        _reportedRemainingWick = flags.ReportedRemainingWick;
+        _player.RestoreCell(snapshot.PlayerCell);
+        _lamp.RestoreSnapshot(snapshot.Lamp);
+        _hazards.RestoreSnapshot(snapshot.Hazards);
+        _oilFlask.RestoreSnapshot(snapshot.Flasks);
+        _boardRenderer.RestoreDrawingState(snapshot.Lamp.Cell);
+        if (_isTerminal || _progress.IsComplete)
+        {
+            _player.LockInput();
+        }
+        else
+        {
+            _player.UnlockInput();
+        }
+
+        return true;
+    }
+
+    private void LoadCampaignLevel(int index, bool preserveUndo)
+    {
+        ActivateCampaignScene(index);
+        _currentLevel = _campaignScene.Definition;
+        _progress.Restore(index, isComplete: false);
         _board = new BoardState(_currentLevel.Width, _currentLevel.Height, _currentLevel.Walls);
         _visibility = new VisibilitySystem(_board);
         _lamp.Initialize(_currentLevel.LampStart);
         _wick.Initialize(_currentLevel.StartingWick);
+        _wick.SetDecreaseFrozen(IsPracticeMode);
         _turns.Reset();
         _player.Initialize(_board, _wick, _turns, _lamp, _currentLevel.PlayerStart, _visibility);
+        _player.UnlockInput();
         _stair.Configure(_currentLevel.StairCell);
         _boardRenderer.Configure(_board, _visibility, _lamp.Cell, _wick.CurrentRadius);
         _hazards.Initialize(
@@ -63,28 +150,92 @@ public partial class LevelManager : Node
             _wick,
             _events,
             GetNode<Node2D>("../Crawler"),
-            GetNode<Node2D>("../Moth"));
-        _oilFlask.Configure(_wick, _turns, _player, _boardRenderer, OnResourceTurnSpent, RefreshTacticalState, _currentLevel.OilFlaskCell);
-    }
-
-    public void RestartLevel()
-    {
-        if (_currentLevel is not null)
+            GetNode<Node2D>("../Moth"),
+            _currentLevel.Crawlers,
+            _currentLevel.Moths);
+        _oilFlask.Configure(
+            _wick,
+            _turns,
+            _player,
+            _boardRenderer,
+            OnFlaskTurnSpent,
+            RefreshTacticalState,
+            _currentLevel.Flasks);
+        _isTerminal = false;
+        if (!preserveUndo)
         {
-            LoadLevel(_currentLevel.Index);
+            _reportedRemainingWick = -1;
+        }
+        _pendingAction = null;
+        if (!preserveUndo)
+        {
+            _practice.ClearUndo();
         }
     }
+
+    private void ActivateCampaignScene(int index)
+    {
+        var path = _loader.GetScenePath(index);
+        var packed = GD.Load<PackedScene>(path) ?? throw new InvalidOperationException($"Campaign scene is missing: {path}");
+        var nextScene = packed.Instantiate<CampaignLevelScene>();
+        if (nextScene.Index != index)
+        {
+            nextScene.QueueFree();
+            throw new InvalidOperationException($"Campaign scene {path} identifies level {nextScene.Index} instead of {index}.");
+        }
+
+        _campaignScene?.QueueFree();
+        _campaignScene = nextScene;
+        AddChild(_campaignScene);
+    }
+
+    private void TogglePracticeMode() => SetPracticeMode(!IsPracticeMode);
+
+    private void OnUndoRequested() => TryUndo();
+
+    private void OnActionStarting()
+    {
+        _pendingAction = IsPracticeMode && !_isTerminal ? CaptureSnapshot() : null;
+    }
+
+    private void OnActionFinished(bool succeeded)
+    {
+        if (succeeded && _pendingAction is not null)
+        {
+            _practice.RecordSuccessfulAction(_pendingAction);
+        }
+
+        _pendingAction = null;
+    }
+
+    private GameplaySnapshot CaptureSnapshot() => GameplaySnapshot.Capture(
+        _currentLevel.Index,
+        _player.State,
+        _lamp.State,
+        _wick.State,
+        _turns.State,
+        _hazards.State,
+        _oilFlask.State,
+        _visibility,
+        _isTerminal,
+        _progress.IsComplete,
+        _reportedRemainingWick);
 
     private void OnPlayerMoved(GridCoord cell)
     {
         RefreshTacticalState();
         _stair.TryEnter(cell);
-        if (_wick.IsDepleted)
+        if (_isTerminal || _wick.IsDepleted)
         {
             return;
         }
 
         _hazards.AdvanceTurn();
+        if (_isTerminal)
+        {
+            return;
+        }
+
         _wick.AdvanceTurn();
         RefreshTacticalState();
         if (!_wick.IsDepleted)
@@ -95,15 +246,23 @@ public partial class LevelManager : Node
 
     private void OnFlareRequested()
     {
+        OnActionStarting();
         if (!_wick.TryFireFlare())
         {
+            OnActionFinished(false);
             return;
         }
 
+        _turns.AdvanceTurn();
         RefreshTacticalState();
-        OnResourceTurnSpent();
-        _wick.AdvanceTurn();
-        RefreshTacticalState();
+        _hazards.AdvanceTurn();
+        if (!_isTerminal)
+        {
+            _wick.AdvanceTurn();
+            RefreshTacticalState();
+        }
+
+        OnActionFinished(true);
     }
 
     private void OnLampChanged()
@@ -115,21 +274,64 @@ public partial class LevelManager : Node
 
         RefreshTacticalState();
         _hazards.AdvanceTurn();
-        _wick.AdvanceTurn();
-        RefreshTacticalState();
+        if (!_isTerminal)
+        {
+            _wick.AdvanceTurn();
+            RefreshTacticalState();
+        }
     }
 
-    private void OnResourceTurnSpent()
+    private void OnFlaskTurnSpent(int radiusOverride) => _hazards.AdvanceTurn(radiusOverride);
+
+    private void RefreshTacticalState()
     {
-        _hazards.AdvanceTurn();
+        _boardRenderer.RecomputeVisibility(_lamp.Cell, _wick.CurrentRadius);
+        _hazards.RefreshVisibility();
     }
 
-    private void RefreshTacticalState() => _boardRenderer.RecomputeVisibility(_lamp.Cell, _wick.CurrentRadius);
+    private void OnLightOut(string cause)
+    {
+        if (_isTerminal)
+        {
+            return;
+        }
 
-    private void OnLightOut(string cause) => CallDeferred(nameof(RestartLevel));
+        _isTerminal = true;
+        _player.LockInput();
+        if (!IsPracticeMode)
+        {
+            CallDeferred(nameof(RestartRun));
+        }
+    }
 
     private void OnStairReached()
     {
-        _events.EmitSignal(GameEvents.SignalName.LevelCleared, _currentLevel.Index, _wick.CurrentWick);
+        if (_isTerminal)
+        {
+            return;
+        }
+
+        _reportedRemainingWick = _wick.CurrentWick;
+        _isTerminal = true;
+        _player.LockInput();
+        _events.EmitSignal(GameEvents.SignalName.LevelCleared, _currentLevel.Index, _reportedRemainingWick);
+        CallDeferred(nameof(AdvanceCampaignAfterClear));
+    }
+
+    private void AdvanceCampaignAfterClear()
+    {
+        if (!_isTerminal)
+        {
+            return;
+        }
+
+        if (_progress.AdvanceAfterClear())
+        {
+            LoadCampaignLevel(_progress.CurrentLevelIndex, preserveUndo: true);
+            return;
+        }
+
+        _isTerminal = true;
+        _player.LockInput();
     }
 }

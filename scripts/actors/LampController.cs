@@ -25,7 +25,17 @@ public sealed class LampState
         IsCarried = false;
         Cell = cell;
     }
+
+    public LampSnapshot CaptureSnapshot() => new(Cell, IsCarried);
+
+    public void RestoreSnapshot(LampSnapshot snapshot)
+    {
+        Cell = snapshot.Cell;
+        IsCarried = snapshot.IsCarried;
+    }
 }
+
+public readonly record struct LampSnapshot(GridCoord Cell, bool IsCarried);
 
 public partial class LampController : Node2D
 {
@@ -51,6 +61,12 @@ public partial class LampController : Node2D
     public void Place(GridCoord cell)
     {
         State.Place(cell);
+        SyncPosition();
+    }
+
+    public void RestoreSnapshot(LampSnapshot snapshot)
+    {
+        State.RestoreSnapshot(snapshot);
         SyncPosition();
     }
 

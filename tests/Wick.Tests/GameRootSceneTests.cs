@@ -33,6 +33,19 @@ public sealed class GameRootSceneTests
         Assert.Contains("[node name=\"LevelManager\" type=\"Node\" parent=\".\"]", scene);
     }
 
+    [Fact]
+    public void Hud_ContainsVisiblePracticeAndUndoKeyboardStatus()
+    {
+        var scenePath = FindProjectFile("scenes", "ui", "Hud.tscn");
+        var scene = File.ReadAllText(scenePath);
+
+        Assert.Contains("[node name=\"CampaignStatus\"", scene);
+        Assert.Contains("[node name=\"PracticeStatus\"", scene);
+        Assert.Contains("[node name=\"Controls\"", scene);
+        Assert.Contains("P PRACTICE", scene);
+        Assert.Contains("Z UNDO", scene);
+    }
+
     private static string FindProjectFile(params string[] relativePath)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

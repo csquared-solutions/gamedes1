@@ -53,4 +53,37 @@ public sealed class OilFlaskStateTests
         Assert.False(flask.TryBeginLift(playerCell));
         Assert.Equal(10, wick.CurrentWick);
     }
+
+    [Fact]
+    public void FlaskCollection_InitializesAndTracksEveryAuthoredFlaskIndependently()
+    {
+        var wick = new WickState();
+        wick.Initialize(10);
+        var turns = new TurnState();
+        var first = new GridCoord(2, 2);
+        var second = new GridCoord(4, 2);
+        var flasks = new OilFlaskCollectionState(wick, turns, new[] { first, second });
+
+        Assert.True(flasks.TryBeginLift(first));
+
+        Assert.True(flasks.IsCollected(first));
+        Assert.False(flasks.IsCollected(second));
+        Assert.False(flasks.TryBeginLift(new GridCoord(3, 2)));
+    }
+
+    [Fact]
+    public void FlaskCollection_ReportsRadiusZeroForBothHazardTurns()
+    {
+        var wick = new WickState();
+        wick.Initialize(6);
+        var turns = new TurnState();
+        var pickup = new GridCoord(2, 2);
+        var flasks = new OilFlaskCollectionState(wick, turns, new[] { pickup });
+        var hazardRadii = new List<int>();
+        flasks.TurnSpent += hazardRadii.Add;
+
+        Assert.True(flasks.TryBeginLift(pickup));
+
+        Assert.Equal(new[] { 0, 0 }, hazardRadii);
+    }
 }

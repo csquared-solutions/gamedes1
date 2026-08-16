@@ -37,6 +37,8 @@ public partial class WickSystem : Node, IPlayerWick
 
     public void AdvanceTurn() => _state.AdvanceTurn();
 
+    public void SetDecreaseFrozen(bool frozen) => _state.SetDecreaseFrozen(frozen);
+
     private void OnWickChanged(int wickValue)
     {
         _events?.EmitSignal(GameEvents.SignalName.WickChanged, wickValue);

@@ -52,6 +52,10 @@ public sealed class PlayerMovementState
         {
             _lamp.AttachToPlayer(Cell);
         }
+        else if (_lamp.Cell == Cell)
+        {
+            _lamp.AttachToPlayer(Cell);
+        }
 
         RefreshVisibility();
         return true;
@@ -65,18 +69,6 @@ public sealed class PlayerMovementState
         }
 
         _lamp.Place(Cell);
-        RefreshVisibility();
-        return true;
-    }
-
-    public bool TryRecoverLamp()
-    {
-        if (_lamp.IsCarried || _lamp.Cell != Cell || !TrySpendAction())
-        {
-            return false;
-        }
-
-        _lamp.AttachToPlayer(Cell);
         RefreshVisibility();
         return true;
     }
@@ -97,6 +89,11 @@ public sealed class PlayerMovementState
     }
 
     private void RefreshVisibility() => _visibility?.Recompute(_lamp.Cell, _wick.CurrentRadius);
+
+    public void RestoreCell(GridCoord cell)
+    {
+        Cell = cell;
+    }
 }
 
 public partial class PlayerController : Node2D
@@ -111,8 +108,13 @@ public partial class PlayerController : Node2D
     public event Action RestartRequested;
     public event Action FlareRequested;
     public event Action LampChanged;
+    public event Action PracticeModeToggleRequested;
+    public event Action UndoRequested;
+    public event Action ActionStarting;
+    public event Action<bool> ActionFinished;
 
     public GridCoord Cell => _state?.Cell ?? default;
+    public PlayerMovementState State => _state;
 
     public override void _Ready()
     {
@@ -134,37 +136,31 @@ public partial class PlayerController : Node2D
 
     public bool TryMove(GridCoord direction)
     {
+        ActionStarting?.Invoke();
         if (_state is null || !_state.TryMove(direction))
         {
+            ActionFinished?.Invoke(false);
             return false;
         }
 
         SyncPositions();
         CellChanged?.Invoke(Cell);
+        ActionFinished?.Invoke(true);
         return true;
     }
 
     public bool TryPlaceLamp()
     {
+        ActionStarting?.Invoke();
         if (_state is null || !_state.TryPlaceLamp())
         {
+            ActionFinished?.Invoke(false);
             return false;
         }
 
         _lamp.SyncPosition();
         LampChanged?.Invoke();
-        return true;
-    }
-
-    public bool TryRecoverLamp()
-    {
-        if (_state is null || !_state.TryRecoverLamp())
-        {
-            return false;
-        }
-
-        _lamp.SyncPosition();
-        LampChanged?.Invoke();
+        ActionFinished?.Invoke(true);
         return true;
     }
 
@@ -172,13 +168,14 @@ public partial class PlayerController : Node2D
 
     public void UnlockInput() => _inputLocked = false;
 
+    public void RestoreCell(GridCoord cell)
+    {
+        _state?.RestoreCell(cell);
+        SyncPositions();
+    }
+
     public override void _UnhandledInput(InputEvent inputEvent)
     {
-        if (_inputLocked)
-        {
-            return;
-        }
-
         if (inputEvent.IsActionPressed("restart_level"))
         {
             RestartRequested?.Invoke();
@@ -186,13 +183,28 @@ public partial class PlayerController : Node2D
             return;
         }
 
+        if (inputEvent.IsActionPressed("practice_mode"))
+        {
+            PracticeModeToggleRequested?.Invoke();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (inputEvent.IsActionPressed("undo_action"))
+        {
+            UndoRequested?.Invoke();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (_inputLocked)
+        {
+            return;
+        }
+
         if (inputEvent.IsActionPressed("lamp_toggle"))
         {
-            if (!TryPlaceLamp())
-            {
-                TryRecoverLamp();
-            }
-
+            TryPlaceLamp();
             GetViewport().SetInputAsHandled();
             return;
         }
@@ -231,6 +243,8 @@ public partial class PlayerController : Node2D
         Bind("lamp_toggle", Key.E, Key.Q);
         Bind("flare", Key.F, Key.Space);
         Bind("restart_level", Key.R);
+        Bind("practice_mode", Key.P);
+        Bind("undo_action", Key.Z);
     }
 
     private static void Bind(string action, params Key[] keys)

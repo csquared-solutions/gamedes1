@@ -80,7 +80,7 @@ public sealed class PlayerMovementStateTests
     }
 
     [Fact]
-    public void TryRecoverLamp_AttachesLamp_WhenPlayerReturnsToItsCell()
+    public void TryMove_AttachesLamp_WhenPlayerReturnsToItsCell()
     {
         var wick = new WickState();
         wick.Initialize(5);
@@ -92,23 +92,42 @@ public sealed class PlayerMovementStateTests
         state.TryMove(new GridCoord(1, 0));
         state.TryMove(new GridCoord(-1, 0));
 
-        Assert.True(state.TryRecoverLamp());
         Assert.True(lamp.IsCarried);
         Assert.Equal(state.Cell, lamp.Cell);
     }
 
     [Fact]
-    public void TryRecoverLamp_AtFinalWick_ResetsTurnWithoutLeavingStaleAction()
+    public void TryMove_AutomaticallyRecoversPlacedLampWithoutDoubleSpending()
     {
         var wick = new WickState();
-        wick.Initialize(1);
+        wick.Initialize(5);
+        var turns = new TurnState();
+        var lamp = new LampState(new GridCoord(2, 2));
+        var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
+
+        Assert.True(state.TryPlaceLamp());
+        Assert.True(state.TryMove(new GridCoord(1, 0)));
+        Assert.True(state.TryMove(new GridCoord(-1, 0)));
+
+        Assert.True(lamp.IsCarried);
+        Assert.Equal(state.Cell, lamp.Cell);
+        Assert.Equal(2, wick.CurrentWick);
+        Assert.Equal(3, turns.CurrentTurn);
+    }
+
+    [Fact]
+    public void TryMove_AutoRecoveryAtFinalWick_ResetsTurnWithoutLeavingStaleAction()
+    {
+        var wick = new WickState();
+        wick.Initialize(3);
         var turns = new TurnState();
         wick.Depleted += turns.Reset;
         var lamp = new LampState(new GridCoord(2, 2));
-        lamp.Place(new GridCoord(2, 2));
         var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
 
-        Assert.True(state.TryRecoverLamp());
+        Assert.True(state.TryPlaceLamp());
+        Assert.True(state.TryMove(new GridCoord(1, 0)));
+        Assert.True(state.TryMove(new GridCoord(-1, 0)));
 
         Assert.Equal(0, wick.CurrentWick);
         Assert.Equal(0, turns.CurrentTurn);

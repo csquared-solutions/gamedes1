@@ -24,7 +24,7 @@ script = ExtResource("1_hud")
 offset_left = 18.0
 offset_top = 18.0
 offset_right = 320.0
-offset_bottom = 220.0
+offset_bottom = 310.0
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
@@ -38,6 +38,16 @@ theme_override_constants/separation = 6
 
 [node name="WickGauge" parent="Margin/Panel/Content" instance=ExtResource("2_wick_gauge")]
 
+[node name="CampaignStatus" type="Label" parent="Margin/Panel/Content"]
+theme_override_colors/font_color = Color(0.95, 0.78, 0.35, 1)
+theme_override_font_sizes/font_size = 16
+text = "LEVEL 1/7"
+
+[node name="PracticeStatus" type="Label" parent="Margin/Panel/Content"]
+theme_override_colors/font_color = Color(0.7, 0.88, 0.78, 1)
+theme_override_font_sizes/font_size = 15
+text = "CAMPAIGN MODE | P PRACTICE"
+
 [node name="ReturnCost" type="Label" parent="Margin/Panel/Content"]
 theme_override_colors/font_color = Color(0.82, 0.82, 0.75, 1)
 theme_override_font_sizes/font_size = 16
@@ -50,3 +60,9 @@ text = "RETURN COST 0"
 [node name="LossCause" type="Label" parent="Margin/Panel/Content"]
 theme_override_colors/font_color = Color(1, 0.4, 0.3, 1)
 theme_override_font_sizes/font_size = 15
+
+[node name="Controls" type="Label" parent="Margin/Panel/Content"]
+theme_override_colors/font_color = Color(0.72, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 13
+text = "P PRACTICE | Z UNDO | E SET LAMP | F FLARE | R RESTART"
+autowrap_mode = 2

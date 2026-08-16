@@ -113,6 +113,23 @@ public sealed class HazardSystemTests
         Assert.True(crawler.HasReachedLamp);
     }
 
+    [Fact]
+    public void HazardSimulation_UsesEveryAuthoredStartAndReportsSmotherOnlyOnce()
+    {
+        var board = new BoardState(7, 7);
+        var visibility = new VisibilitySystem(board);
+        visibility.Recompute(new GridCoord(2, 1), radius: 0);
+        var hazards = new HazardSimulationState(
+            board,
+            new[] { new GridCoord(2, 1), new GridCoord(5, 1) },
+            new[] { new GridCoord(5, 5) });
+
+        Assert.Equal(2, hazards.CrawlerCells.Count);
+        Assert.Single(hazards.MothCells);
+        Assert.True(hazards.AdvanceTurn(visibility, new GridCoord(2, 1), radius: 0));
+        Assert.False(hazards.AdvanceTurn(visibility, new GridCoord(2, 1), radius: 0));
+    }
+
     private static HazardContext CreateContext(GridCoord lampCell, int radius)
     {
         var board = new BoardState(19, 13);

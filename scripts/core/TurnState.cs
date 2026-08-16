@@ -13,4 +13,6 @@ public sealed class TurnState : ITurnAdvancer
     {
         CurrentTurn = 0;
     }
+
+    public void Restore(int turn) => CurrentTurn = turn;
 }

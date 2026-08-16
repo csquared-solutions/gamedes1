@@ -28,7 +28,7 @@ public sealed class LevelLoaderTests
     }
 
     [Fact]
-    public void DefaultRoom_ReachableStairLeavesWickBeforeDepletion()
+    public void DefaultCampaignLevel_ReachableStairFitsAuthoredFlaskEconomy()
     {
         var level = new LevelLoader().Load(1);
         var board = new BoardState(level.Width, level.Height, level.Walls);
@@ -36,7 +36,9 @@ public sealed class LevelLoaderTests
         var distance = FindShortestPathLength(board, level.PlayerStart, level.StairCell);
 
         Assert.NotNull(distance);
-        Assert.True(distance < level.StartingWick);
+        var availableWick = level.StartingWick + (level.Flasks.Length * LevelTuning.FlaskRestore);
+        var liftTurns = level.Flasks.Length * 2;
+        Assert.True(distance + liftTurns < availableWick);
     }
 
     private static int? FindShortestPathLength(BoardState board, GridCoord start, GridCoord goal)

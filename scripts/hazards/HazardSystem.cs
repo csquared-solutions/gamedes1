@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using Wick.Actors;
 using Wick.Board;
@@ -10,21 +12,18 @@ public partial class HazardSystem : Node
     private static readonly Vector2 BoardOrigin = new(152, 104);
     private const int CellSize = 48;
 
-    private BoardState _board;
     private VisibilitySystem _visibility;
     private LampController _lamp;
     private WickSystem _wick;
     private GameEvents _events;
-    private Node2D _crawlerMarker;
-    private Node2D _mothMarker;
-    private CrawlerController _crawler;
-    private MothController _moth;
-    private bool _smothered;
+    private readonly List<Node2D> _crawlerMarkers = new();
+    private readonly List<Node2D> _mothMarkers = new();
 
-    public HazardMotionState CrawlerState { get; private set; } = HazardMotionState.Stalled;
-    public HazardMotionState MothState { get; private set; } = HazardMotionState.Stalled;
-    public bool IsCrawlerVisible => _crawler is not null && HazardReadability.IsVisible(_visibility, _crawler.Cell);
-    public bool IsMothVisible => _moth is not null && HazardReadability.IsVisible(_visibility, _moth.Cell);
+    public HazardSimulationState State { get; private set; }
+    public HazardMotionState CrawlerState => AggregateMotion(State?.CrawlerMotion);
+    public HazardMotionState MothState => AggregateMotion(State?.MothMotion);
+    public bool IsCrawlerVisible => State is not null && State.CrawlerCells.Any(cell => HazardReadability.IsVisible(_visibility, cell));
+    public bool IsMothVisible => State is not null && State.MothCells.Any(cell => HazardReadability.IsVisible(_visibility, cell));
 
     public void Initialize(
         BoardState board,
@@ -33,54 +32,100 @@ public partial class HazardSystem : Node
         WickSystem wick,
         GameEvents events,
         Node2D crawlerMarker,
-        Node2D mothMarker)
+        Node2D mothMarker,
+        IEnumerable<GridCoord> crawlerStarts,
+        IEnumerable<GridCoord> mothStarts)
     {
-        _board = board;
         _visibility = visibility;
         _lamp = lamp;
         _wick = wick;
         _events = events;
-        _crawlerMarker = crawlerMarker;
-        _mothMarker = mothMarker;
-        _crawler = new CrawlerController(new GridCoord(board.Width - 2, 3));
-        _moth = new MothController(new GridCoord(board.Width - 2, board.Height - 4));
-        _smothered = false;
-        CrawlerState = HazardMotionState.Stalled;
-        MothState = HazardMotionState.Stalled;
+        State = new HazardSimulationState(board, crawlerStarts, mothStarts);
+        RebuildMarkers(_crawlerMarkers, crawlerMarker, State.CrawlerCells.Count);
+        RebuildMarkers(_mothMarkers, mothMarker, State.MothCells.Count);
         SyncMarkers();
     }
 
-    public void AdvanceTurn()
+    public void AdvanceTurn(int radiusOverride = -1)
     {
-        if (_smothered || _crawler is null || _moth is null)
+        if (State is null)
         {
             return;
         }
 
-        var context = new HazardContext(_board, _visibility, _lamp.Cell, _wick.CurrentRadius);
-        var crawlerCell = _crawler.Cell;
-        var mothCell = _moth.Cell;
-        _crawler.TakeTurn(context);
-        _moth.TakeTurn(context);
-        CrawlerState = _crawler.Cell == crawlerCell
-            ? HazardMotionState.Stalled
-            : context.IsLit(_crawler.Cell) ? HazardMotionState.Slowed : HazardMotionState.Moving;
-        MothState = _moth.Cell == mothCell
-            ? HazardMotionState.Stalled
-            : HazardMotionState.Moving;
-        SyncMarkers();
-
-        if (_crawler.HasReachedLamp || _moth.HasReachedLamp)
+        var radius = radiusOverride >= 0 ? radiusOverride : _wick.CurrentRadius;
+        if (State.AdvanceTurn(_visibility, _lamp.Cell, radius))
         {
-            _smothered = true;
             _events.EmitSignal(GameEvents.SignalName.LightOut, "smothered");
         }
+
+        SyncMarkers();
     }
+
+    public void RestoreSnapshot(HazardSimulationSnapshot snapshot)
+    {
+        State.RestoreSnapshot(snapshot);
+        SyncMarkers();
+    }
+
+    public void RefreshVisibility() => SyncMarkers();
 
     private void SyncMarkers()
     {
-        _crawlerMarker.Position = ToWorld(_crawler.Cell);
-        _mothMarker.Position = ToWorld(_moth.Cell);
+        if (State is null)
+        {
+            return;
+        }
+
+        SyncMarkerSet(_crawlerMarkers, State.CrawlerCells);
+        SyncMarkerSet(_mothMarkers, State.MothCells);
+    }
+
+    private void SyncMarkerSet(IReadOnlyList<Node2D> markers, IReadOnlyList<GridCoord> cells)
+    {
+        for (var index = 0; index < markers.Count; index++)
+        {
+            markers[index].Position = ToWorld(cells[index]);
+            markers[index].Visible = _visibility.IsVisible(cells[index]);
+        }
+    }
+
+    private static void RebuildMarkers(List<Node2D> markers, Node2D template, int count)
+    {
+        for (var index = 1; index < markers.Count; index++)
+        {
+            markers[index].QueueFree();
+        }
+
+        markers.Clear();
+        template.Visible = count > 0;
+        if (count == 0)
+        {
+            return;
+        }
+
+        markers.Add(template);
+        for (var index = 1; index < count; index++)
+        {
+            var marker = template.Duplicate() as Node2D;
+            template.GetParent().AddChild(marker);
+            markers.Add(marker);
+        }
+    }
+
+    private static HazardMotionState AggregateMotion(IReadOnlyList<HazardMotionState> states)
+    {
+        if (states is null || states.Count == 0)
+        {
+            return HazardMotionState.Stalled;
+        }
+
+        if (states.Contains(HazardMotionState.Moving))
+        {
+            return HazardMotionState.Moving;
+        }
+
+        return states.Contains(HazardMotionState.Slowed) ? HazardMotionState.Slowed : HazardMotionState.Stalled;
     }
 
     private static Vector2 ToWorld(GridCoord cell) =>

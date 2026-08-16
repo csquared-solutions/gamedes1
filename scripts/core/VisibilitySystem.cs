@@ -41,6 +41,16 @@ public sealed class VisibilitySystem
 
     public bool WasSeen(GridCoord cell) => _seen.Contains(cell);
 
+    public VisibilitySnapshot CaptureSnapshot() => new(_visible.ToArray(), _seen.ToArray());
+
+    public void RestoreSnapshot(VisibilitySnapshot snapshot)
+    {
+        _visible.Clear();
+        _visible.UnionWith(snapshot.Visible);
+        _seen.Clear();
+        _seen.UnionWith(snapshot.Seen);
+    }
+
     private VisibilityResult CreateResult() => new(_visible.ToArray(), _seen.ToArray());
 
     private bool HasLineOfSight(GridCoord from, GridCoord to)
@@ -95,3 +105,5 @@ public sealed class VisibilitySystem
 }
 
 public sealed record VisibilityResult(IReadOnlyCollection<GridCoord> Visible, IReadOnlyCollection<GridCoord> Seen);
+
+public sealed record VisibilitySnapshot(GridCoord[] Visible, GridCoord[] Seen);

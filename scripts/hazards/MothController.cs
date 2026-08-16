@@ -26,4 +26,15 @@ public sealed class MothController : HazardBase
 
         return MoveTowardLamp(context);
     }
+
+    public MothSnapshot CaptureSnapshot() => new(Cell, HasReachedLamp, _enteredLitSpace);
+
+    public void RestoreSnapshot(MothSnapshot snapshot)
+    {
+        Cell = snapshot.Cell;
+        HasReachedLamp = snapshot.HasReachedLamp;
+        _enteredLitSpace = snapshot.EnteredLitSpace;
+    }
 }
+
+public readonly record struct MothSnapshot(GridCoord Cell, bool HasReachedLamp, bool EnteredLitSpace);

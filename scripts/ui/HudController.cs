@@ -8,6 +8,7 @@ namespace Wick.Ui;
 public partial class HudController : CanvasLayer
 {
     private WickSystem _wick;
+    private LevelManager _levels;
     private HazardSystem _hazards;
     private LampTetherController _tether;
     private WickGaugeController _gauge;
@@ -15,10 +16,14 @@ public partial class HudController : CanvasLayer
     private HazardStateIndicatorController _moth;
     private Label _returnCost;
     private Label _lossCause;
+    private Label _campaignStatus;
+    private Label _practiceStatus;
+    private Label _controls;
 
     public override void _Ready()
     {
         _wick = GetNode<WickSystem>("../WickSystem");
+        _levels = GetNode<LevelManager>("../LevelManager");
         _hazards = GetNode<HazardSystem>("../HazardSystem");
         _tether = GetNode<LampTetherController>("../LampTether");
         _gauge = GetNode<WickGaugeController>("Margin/Panel/Content/WickGauge");
@@ -26,6 +31,9 @@ public partial class HudController : CanvasLayer
         _moth = GetNode<HazardStateIndicatorController>("Margin/Panel/Content/MothState");
         _returnCost = GetNode<Label>("Margin/Panel/Content/ReturnCost");
         _lossCause = GetNode<Label>("Margin/Panel/Content/LossCause");
+        _campaignStatus = GetNode<Label>("Margin/Panel/Content/CampaignStatus");
+        _practiceStatus = GetNode<Label>("Margin/Panel/Content/PracticeStatus");
+        _controls = GetNode<Label>("Margin/Panel/Content/Controls");
         GetNode<GameEvents>("../GameEvents").Connect(GameEvents.SignalName.LightOut, Callable.From<string>(ShowLossCause));
     }
 
@@ -35,9 +43,27 @@ public partial class HudController : CanvasLayer
         _returnCost.Text = $"RETURN COST { _tether.GetReturnCost() }";
         UpdateHazardState(_crawler, "CRAWLER", _hazards.CrawlerState, _hazards.IsCrawlerVisible);
         UpdateHazardState(_moth, "MOTH", _hazards.MothState, _hazards.IsMothVisible);
+        _campaignStatus.Text = GetCampaignStatus();
+        _practiceStatus.Text = _levels.IsPracticeMode
+            ? $"PRACTICE MODE | WICK FROZEN | Z UNDO {(_levels.CanUndo ? "READY" : "EMPTY")}"
+            : "CAMPAIGN MODE | P PRACTICE";
+        _controls.Text = "P PRACTICE | Z UNDO | E SET LAMP | F FLARE | R RESTART";
     }
 
     private void ShowLossCause(string cause) => _lossCause.Text = $"LIGHT OUT: {cause.ToUpperInvariant()}";
+
+    private string GetCampaignStatus()
+    {
+        if (_levels.IsRunComplete)
+        {
+            return $"RUN COMPLETE | LEVEL 7 CLEAR: {_levels.ReportedRemainingWick} WICK";
+        }
+
+        var clearReport = _levels.ReportedRemainingWick >= 0
+            ? $" | LAST CLEAR: {_levels.ReportedRemainingWick} WICK"
+            : string.Empty;
+        return $"LEVEL {_levels.CurrentLevelIndex}/7{clearReport}";
+    }
 
     private static void UpdateHazardState(HazardStateIndicatorController indicator, string name, HazardMotionState state, bool isVisible)
     {

@@ -35,4 +35,20 @@ public sealed class CrawlerController : HazardBase
 
         return Cell;
     }
+
+    public CrawlerSnapshot CaptureSnapshot() => new(Cell, HasReachedLamp, _enteredLitSpace, _skipNextLitTurn);
+
+    public void RestoreSnapshot(CrawlerSnapshot snapshot)
+    {
+        Cell = snapshot.Cell;
+        HasReachedLamp = snapshot.HasReachedLamp;
+        _enteredLitSpace = snapshot.EnteredLitSpace;
+        _skipNextLitTurn = snapshot.SkipNextLitTurn;
+    }
 }
+
+public readonly record struct CrawlerSnapshot(
+    GridCoord Cell,
+    bool HasReachedLamp,
+    bool EnteredLitSpace,
+    bool SkipNextLitTurn);

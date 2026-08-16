@@ -52,6 +52,12 @@ public partial class BoardRenderer : Node2D
         QueueRedraw();
     }
 
+    public void RestoreDrawingState(GridCoord lampCell)
+    {
+        _lampCell = lampCell;
+        QueueRedraw();
+    }
+
     public override void _Draw()
     {
         if (_board is null || _visibility is null)
