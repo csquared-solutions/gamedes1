@@ -1,0 +1,24 @@
+; Engine configuration file.
+; It's best edited using the editor and not directly.
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Wick"
+run/main_scene="res://scenes/game/GameRoot.tscn"
+
+[display]
+
+window/size/viewport_width=1216
+window/size/viewport_height=832
+window/size/window_width_override=1216
+window/size/window_height_override=832
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
