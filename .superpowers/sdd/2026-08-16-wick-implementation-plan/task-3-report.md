@@ -41,3 +41,31 @@ The board scene uses a non-smoothed fixed camera at `(608, 416)`, the center of 
 ## Self-Review
 
 No correctness, security, performance, or maintainability findings in the Task 3 changes. The line trace is symmetric for a center-to-center path, excludes the source from wall blocking, and includes a blocking target wall as visible. Visibility results copy their collections so later recomputes cannot mutate prior caller results. The remaining risk is visual-only: real tile geometry and rendering are intentionally deferred, so the camera fit and remembered-tile dimness need an in-editor check once tile rendering is introduced.
+
+## Fix Round 1: Runtime Board Visualization
+
+### Changes
+
+- Replaced the empty `BoardRenderer` node with a `Node2D` placeholder renderer that owns a `19 x 13` board, recomputes visibility from its lamp cell, and draws every cell as `Hidden`, `Remembered`, or `Visible`.
+- Added a visible lamp marker and static boundary-wall drawing. Remembered walls draw dimmer than currently visible walls, while hidden geometry is not drawn.
+- Added `RecomputeVisibility(GridCoord lampCell, int radius)` so future lamp and wick systems can drive the same runtime visualization without replacing its state model.
+- Centered a `912 x 624` placeholder board at `(152, 104)` within the fixed `1216 x 832` viewport.
+- Renamed the memory test to reference previously visible tiles rather than walls, matching its empty-room fixture.
+
+### Covering Tests
+
+- `tests/Wick.Tests/VisibilitySystemTests.cs`
+
+### Command and Output
+
+```powershell
+dotnet test tests\Wick.Tests --no-restore --logger "console;verbosity=normal"
+```
+
+```text
+Test Run Successful.
+Total tests: 8
+     Passed: 8
+```
+
+`dotnet build Wick.csproj --no-restore` also passed with 0 warnings and 0 errors. The Godot 4.7 Mono headless editor scan completed with exit code 0 and registered the amended scene scripts. Direct headless game startup still crashes in the local Godot executable before project output; this is an environment limitation, while the editor scan and build both succeed.

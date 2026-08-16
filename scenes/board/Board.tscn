@@ -4,7 +4,7 @@
 
 [node name="Board" type="Node2D"]
 
-[node name="BoardRenderer" type="Node" parent="."]
+[node name="BoardRenderer" type="Node2D" parent="."]
 script = ExtResource("1_board_renderer")
 
 [node name="Camera2D" type="Camera2D" parent="."]

@@ -18,7 +18,7 @@ public sealed class VisibilitySystemTests
     }
 
     [Fact]
-    public void Recompute_PreservesSeenMemory_ForPreviouslyVisibleWalls()
+    public void Recompute_PreservesSeenMemory_ForPreviouslyVisibleTiles()
     {
         var board = TestBoards.EmptyRoom();
         var visibility = new VisibilitySystem(board);
@@ -27,6 +27,18 @@ public sealed class VisibilitySystemTests
         visibility.Recompute(new GridCoord(9, 6), 1);
 
         Assert.True(visibility.WasSeen(new GridCoord(9, 2)));
+    }
+
+    [Fact]
+    public void PresentationState_DistinguishesVisibleRememberedAndHiddenTiles()
+    {
+        var visibility = new VisibilitySystem(TestBoards.EmptyRoom());
+        visibility.Recompute(new GridCoord(9, 6), 2);
+        visibility.Recompute(new GridCoord(9, 6), 0);
+
+        Assert.Equal(VisibilityState.Visible, BoardRenderer.GetVisibilityState(visibility, new GridCoord(9, 6)));
+        Assert.Equal(VisibilityState.Remembered, BoardRenderer.GetVisibilityState(visibility, new GridCoord(9, 5)));
+        Assert.Equal(VisibilityState.Hidden, BoardRenderer.GetVisibilityState(visibility, new GridCoord(0, 0)));
     }
 
     [Fact]
