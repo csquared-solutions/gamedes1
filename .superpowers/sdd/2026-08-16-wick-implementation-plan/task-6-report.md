@@ -120,3 +120,89 @@ Build succeeded.
 
 - `godot` and `godot4` are not installed or on `PATH`, so no headless Godot scene-load/manual runtime verification could be performed in this environment.
 - The first test restore required network permission because the default sandbox blocked NuGet access. Subsequent focused and full test runs passed.
+
+## Fix Round 1: Review Findings
+
+### Changes
+
+- Added `OilFlaskCell` to `LevelDefinition` and authored the flask at `(7, 6)` in the default level.
+- Replaced global flask activation with one-time, cell-bound `OilFlaskState.TryBeginLift(playerCell)`. The controller is now positioned on that tile, displays a flask marker, and is called only after the player moves onto it.
+- Made flask depletion terminal: if either burn reaches zero, the lift stops immediately without another turn or wick restoration.
+- Added `HazardReadability` and hid each hazard-state indicator unless that hazard's current tile is visible.
+- Made valid lamp placement and recovery spend one wick and advance one turn in `PlayerMovementState`. `LevelManager` advances hazards only while wick remains after that action, avoiding final-wick restart reentrancy.
+
+### Focused TDD Evidence
+
+RED command:
+
+```powershell
+dotnet test tests\Wick.Tests\Wick.Tests.csproj --filter "FullyQualifiedName~OilFlaskStateTests|FullyQualifiedName~PlayerMovementStateTests.TryPlaceLamp_ConsumesOneWickAndAdvancesTurn|FullyQualifiedName~PlayerMovementStateTests.TryRecoverLamp_AtFinalWick|FullyQualifiedName~HazardReadabilityTests"
+```
+
+RED result:
+
+```text
+Failed: 5, Passed: 1, Total: 6
+```
+
+The failures were the expected missing tile-bound flask constructor/API and readability API, final-wick flask restoring 6 wick, lamp placement leaving wick at 5 instead of 4, and final-wick recovery leaving wick at 1 instead of 0.
+
+Additional RED command for the updated timing contract:
+
+```powershell
+dotnet test tests\Wick.Tests\Wick.Tests.csproj --filter "FullyQualifiedName~OilFlaskStateTests.FlaskLift_ConsumesTwoTurns_ThenRestoresSixWick"
+```
+
+```text
+Failed: 1, Passed: 0, Total: 1
+Assert.NotNull() Failure: Value is null
+```
+
+GREEN command:
+
+```powershell
+dotnet test tests\Wick.Tests\Wick.Tests.csproj --filter "FullyQualifiedName~OilFlaskStateTests|FullyQualifiedName~PlayerMovementStateTests.TryPlaceLamp_ConsumesOneWickAndAdvancesTurn|FullyQualifiedName~PlayerMovementStateTests.TryRecoverLamp_AtFinalWick|FullyQualifiedName~HazardReadabilityTests"
+```
+
+GREEN result:
+
+```text
+Passed! - Failed: 0, Passed: 6, Skipped: 0, Total: 6
+```
+
+### Covering Tests
+
+- `OilFlaskStateTests`: tile-only activation, one-time consumption, two-turn/six-wick timing, and final-wick abort.
+- `PlayerMovementStateTests`: lamp placement action cost and final-wick recovery reset safety.
+- `HazardReadabilityTests`: hazard information is displayed only for visible tiles.
+
+### Full Verification
+
+```powershell
+dotnet test tests\Wick.Tests\Wick.Tests.csproj
+```
+
+```text
+Passed! - Failed: 0, Passed: 34, Skipped: 0, Total: 34
+```
+
+```powershell
+dotnet build Wick.csproj --no-restore
+```
+
+```text
+Build succeeded.
+0 Warning(s)
+0 Error(s)
+```
+
+### Self-Review
+
+- Verified no `lift_flask`, `FlaskLiftRequested`, or unrestricted `BeginLift` path remains.
+- Verified the controller validates player and flask cells before forcing darkness, and the pickup hides after collection.
+- Verified valid lamp toggles notify `LevelManager`; invalid toggles do not spend wick or advance turns.
+- No unresolved findings remain in the fix diff.
+
+### Concerns
+
+- `godot` and `godot4` are still unavailable on `PATH`, so a headless Godot scene-load check could not be run in this environment.

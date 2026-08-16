@@ -38,7 +38,7 @@ public partial class LevelManager : Node
         _player.CellChanged += OnPlayerMoved;
         _player.RestartRequested += RestartLevel;
         _player.FlareRequested += OnFlareRequested;
-        _player.FlaskLiftRequested += OnFlaskLiftRequested;
+        _player.LampChanged += OnLampChanged;
         _stair.Reached += OnStairReached;
         _events.Connect(GameEvents.SignalName.LightOut, Callable.From<string>(OnLightOut));
 
@@ -64,7 +64,7 @@ public partial class LevelManager : Node
             _events,
             GetNode<Node2D>("../Crawler"),
             GetNode<Node2D>("../Moth"));
-        _oilFlask.Configure(_wick, _turns, _player, _boardRenderer, OnResourceTurnSpent, RefreshTacticalState);
+        _oilFlask.Configure(_wick, _turns, _player, _boardRenderer, OnResourceTurnSpent, RefreshTacticalState, _currentLevel.OilFlaskCell);
     }
 
     public void RestartLevel()
@@ -79,9 +79,18 @@ public partial class LevelManager : Node
     {
         RefreshTacticalState();
         _stair.TryEnter(cell);
+        if (_wick.IsDepleted)
+        {
+            return;
+        }
+
         _hazards.AdvanceTurn();
         _wick.AdvanceTurn();
         RefreshTacticalState();
+        if (!_wick.IsDepleted)
+        {
+            _oilFlask.TryBeginLift(cell);
+        }
     }
 
     private void OnFlareRequested()
@@ -97,7 +106,18 @@ public partial class LevelManager : Node
         RefreshTacticalState();
     }
 
-    private async void OnFlaskLiftRequested() => await _oilFlask.BeginLift();
+    private void OnLampChanged()
+    {
+        if (_wick.IsDepleted)
+        {
+            return;
+        }
+
+        RefreshTacticalState();
+        _hazards.AdvanceTurn();
+        _wick.AdvanceTurn();
+        RefreshTacticalState();
+    }
 
     private void OnResourceTurnSpent()
     {

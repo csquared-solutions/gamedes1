@@ -59,7 +59,7 @@ public sealed class PlayerMovementState
 
     public bool TryPlaceLamp()
     {
-        if (!_lamp.IsCarried)
+        if (!_lamp.IsCarried || !TrySpendAction())
         {
             return false;
         }
@@ -71,7 +71,7 @@ public sealed class PlayerMovementState
 
     public bool TryRecoverLamp()
     {
-        if (_lamp.IsCarried || _lamp.Cell != Cell)
+        if (_lamp.IsCarried || _lamp.Cell != Cell || !TrySpendAction())
         {
             return false;
         }
@@ -83,6 +83,18 @@ public sealed class PlayerMovementState
 
     private static bool IsOrthogonal(GridCoord direction) =>
         Math.Abs(direction.X) + Math.Abs(direction.Y) == 1;
+
+    private bool TrySpendAction()
+    {
+        if (_wick.CurrentWick < 1)
+        {
+            return false;
+        }
+
+        _turns.AdvanceTurn();
+        _wick.Spend(1);
+        return true;
+    }
 
     private void RefreshVisibility() => _visibility?.Recompute(_lamp.Cell, _wick.CurrentRadius);
 }
@@ -98,7 +110,7 @@ public partial class PlayerController : Node2D
     public event Action<GridCoord> CellChanged;
     public event Action RestartRequested;
     public event Action FlareRequested;
-    public event Action FlaskLiftRequested;
+    public event Action LampChanged;
 
     public GridCoord Cell => _state?.Cell ?? default;
 
@@ -140,6 +152,7 @@ public partial class PlayerController : Node2D
         }
 
         _lamp.SyncPosition();
+        LampChanged?.Invoke();
         return true;
     }
 
@@ -151,6 +164,7 @@ public partial class PlayerController : Node2D
         }
 
         _lamp.SyncPosition();
+        LampChanged?.Invoke();
         return true;
     }
 
@@ -190,13 +204,6 @@ public partial class PlayerController : Node2D
             return;
         }
 
-        if (inputEvent.IsActionPressed("lift_flask"))
-        {
-            FlaskLiftRequested?.Invoke();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
         var direction = inputEvent.IsActionPressed("move_up") ? new GridCoord(0, -1)
             : inputEvent.IsActionPressed("move_down") ? new GridCoord(0, 1)
             : inputEvent.IsActionPressed("move_left") ? new GridCoord(-1, 0)
@@ -223,7 +230,6 @@ public partial class PlayerController : Node2D
         Bind("move_right", Key.Right, Key.D);
         Bind("lamp_toggle", Key.E, Key.Q);
         Bind("flare", Key.F, Key.Space);
-        Bind("lift_flask", Key.G);
         Bind("restart_level", Key.R);
     }
 

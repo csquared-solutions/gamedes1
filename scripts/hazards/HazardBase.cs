@@ -11,6 +11,12 @@ public enum HazardMotionState
     Moving
 }
 
+public static class HazardReadability
+{
+    public static bool IsVisible(VisibilitySystem visibility, GridCoord hazardCell) =>
+        visibility.IsVisible(hazardCell);
+}
+
 public sealed class HazardContext
 {
     public HazardContext(BoardState board, VisibilitySystem visibility, GridCoord lampCell, int lampRadius)

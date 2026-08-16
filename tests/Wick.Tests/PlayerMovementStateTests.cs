@@ -65,6 +65,21 @@ public sealed class PlayerMovementStateTests
     }
 
     [Fact]
+    public void TryPlaceLamp_ConsumesOneWickAndAdvancesTurn()
+    {
+        var wick = new WickState();
+        wick.Initialize(5);
+        var turns = new TurnState();
+        var lamp = new LampState(new GridCoord(2, 2));
+        var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
+
+        Assert.True(state.TryPlaceLamp());
+
+        Assert.Equal(4, wick.CurrentWick);
+        Assert.Equal(1, turns.CurrentTurn);
+    }
+
+    [Fact]
     public void TryRecoverLamp_AttachesLamp_WhenPlayerReturnsToItsCell()
     {
         var wick = new WickState();
@@ -80,6 +95,24 @@ public sealed class PlayerMovementStateTests
         Assert.True(state.TryRecoverLamp());
         Assert.True(lamp.IsCarried);
         Assert.Equal(state.Cell, lamp.Cell);
+    }
+
+    [Fact]
+    public void TryRecoverLamp_AtFinalWick_ResetsTurnWithoutLeavingStaleAction()
+    {
+        var wick = new WickState();
+        wick.Initialize(1);
+        var turns = new TurnState();
+        wick.Depleted += turns.Reset;
+        var lamp = new LampState(new GridCoord(2, 2));
+        lamp.Place(new GridCoord(2, 2));
+        var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
+
+        Assert.True(state.TryRecoverLamp());
+
+        Assert.Equal(0, wick.CurrentWick);
+        Assert.Equal(0, turns.CurrentTurn);
+        Assert.True(lamp.IsCarried);
     }
 
     [Fact]

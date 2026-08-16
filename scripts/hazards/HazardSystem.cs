@@ -23,6 +23,8 @@ public partial class HazardSystem : Node
 
     public HazardMotionState CrawlerState { get; private set; } = HazardMotionState.Stalled;
     public HazardMotionState MothState { get; private set; } = HazardMotionState.Stalled;
+    public bool IsCrawlerVisible => _crawler is not null && HazardReadability.IsVisible(_visibility, _crawler.Cell);
+    public bool IsMothVisible => _moth is not null && HazardReadability.IsVisible(_visibility, _moth.Cell);
 
     public void Initialize(
         BoardState board,

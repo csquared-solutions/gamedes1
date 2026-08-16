@@ -33,9 +33,18 @@ public partial class HudController : CanvasLayer
     {
         _gauge.SetWick(_wick.CurrentWick, _wick.CurrentRadius);
         _returnCost.Text = $"RETURN COST { _tether.GetReturnCost() }";
-        _crawler.SetState("CRAWLER", _hazards.CrawlerState);
-        _moth.SetState("MOTH", _hazards.MothState);
+        UpdateHazardState(_crawler, "CRAWLER", _hazards.CrawlerState, _hazards.IsCrawlerVisible);
+        UpdateHazardState(_moth, "MOTH", _hazards.MothState, _hazards.IsMothVisible);
     }
 
     private void ShowLossCause(string cause) => _lossCause.Text = $"LIGHT OUT: {cause.ToUpperInvariant()}";
+
+    private static void UpdateHazardState(HazardStateIndicatorController indicator, string name, HazardMotionState state, bool isVisible)
+    {
+        indicator.Visible = isVisible;
+        if (isVisible)
+        {
+            indicator.SetState(name, state);
+        }
+    }
 }
