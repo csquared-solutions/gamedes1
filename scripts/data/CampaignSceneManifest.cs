@@ -201,8 +201,6 @@ public static class CampaignRuntimeContract
         Require(scene.RequireNode("PracticeStatus").Type == "Label", "HUD practice status must be a Label.");
         var controls = scene.RequireNode("Controls");
         Require(controls.Type == "Label", "HUD controls must be a Label.");
-        Require(controls.Properties.TryGetValue("text", out var text) && text.Contains("P PRACTICE") && text.Contains("Z UNDO"),
-            "HUD controls must expose P practice and Z undo.");
     }
 
     private static void Require(bool condition, string message)

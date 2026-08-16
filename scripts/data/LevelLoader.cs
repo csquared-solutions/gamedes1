@@ -43,7 +43,10 @@ public sealed class LevelLoader
                 VerticalWall(11, 2, 8, 6),
                 new[]
                 {
-                    new GridCoord(3, 4), new GridCoord(4, 3)
+                    new GridCoord(3, 4), new GridCoord(4, 3),
+                    new GridCoord(12, 8), new GridCoord(13, 8), new GridCoord(14, 8),
+                    new GridCoord(12, 10), new GridCoord(13, 10), new GridCoord(14, 10),
+                    new GridCoord(15, 9)
                 }));
         yield return CreateLevel(
             2, 12, new GridCoord(2, 9), new GridCoord(14, 3),

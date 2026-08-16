@@ -1,4 +1,5 @@
 using Wick.Data;
+using Wick.Board;
 using Xunit;
 
 namespace Wick.Tests;
@@ -54,17 +55,37 @@ public sealed class CampaignSimulationTests
     public void LevelOne_HasAWinningLateLampPlacementTeachingRoute()
     {
         var level = new LevelLoader().Load(1);
+        var board = new BoardState(level.Width, level.Height, level.Walls);
+        var corridor = LevelTopology.FindTerminalCorridor(board, level.StairCell);
+
+        Assert.NotNull(corridor);
 
         var result = CampaignSimulationHarness.FindWinningPlan(
             level,
             new SimulationRequirements(
                 CollectAllFlasks: true,
                 RequireLampPlacement: true,
-                MinimumLampPlacementAction: 12));
+                MinimumLampPlacementAction: 13,
+                MaximumLampPlacementAction: 13));
 
         Assert.True(result.Won, result.Summary);
-        Assert.True(result.PlacedLamp);
-        Assert.InRange(result.FirstLampPlacementAction, 12, 16);
+        var placementIndex = result.Trace.ToList().FindIndex(step => step.Action == "P");
+        Assert.True(placementIndex >= 0);
+        var placement = result.Trace[placementIndex];
+        Assert.Equal(corridor!.CommitmentPoint, placement.PlayerCell);
+        Assert.False(placement.Lamp.IsCarried);
+
+        var corridorMoves = result.Trace
+            .Skip(placementIndex + 1)
+            .Where(step => step.Action != "P" && step.Action != "F")
+            .ToArray();
+        Assert.Equal(corridor.Cells, corridorMoves.Select(step => step.PlayerCell));
+        Assert.All(corridorMoves, step =>
+        {
+            Assert.False(step.Lamp.IsCarried);
+            Assert.Equal(corridor.CommitmentPoint, step.Lamp.Cell);
+        });
+        Assert.Equal(level.StairCell, corridorMoves[^1].PlayerCell);
     }
 
     [Theory]

@@ -29,6 +29,11 @@ internal sealed record FlaskRouteReview(
     IReadOnlyList<int> FlaskVisitOrder,
     SimulationResult Result);
 
+internal sealed record SimulationTraceStep(
+    string Action,
+    GridCoord PlayerCell,
+    LampSnapshot Lamp);
+
 internal sealed record SimulationResult(
     bool Won,
     int RemainingWick,
@@ -40,6 +45,7 @@ internal sealed record SimulationResult(
     int FlasksCollected,
     int ForcedDarkFlaskTurns,
     string Route,
+    IReadOnlyList<SimulationTraceStep> Trace,
     string Summary);
 
 internal static class CampaignSimulationHarness
@@ -183,7 +189,7 @@ internal static class CampaignSimulationHarness
         }
 
         return new SimulationResult(
-            false, 0, 0, false, 0, false, false, 0, 0, string.Empty,
+            false, 0, 0, false, 0, false, false, 0, 0, string.Empty, Array.Empty<SimulationTraceStep>(),
             $"Level {level.Index}: no qualifying plan after {explored} deterministic states; " +
             $"peak frontier {peakFrontier}, placement branches {placementBranches}, duplicate states {duplicateStates}, " +
             $"visited {visited.Count}, action bound {maxActions}, authored movement distance {authoredRouteDistance} " +
@@ -215,7 +221,8 @@ internal static class CampaignSimulationHarness
             false,
             0,
             0,
-            string.Empty);
+            string.Empty,
+            Array.Empty<SimulationTraceStep>());
     }
 
     private static SimulationNode? TryMove(
@@ -404,7 +411,11 @@ internal static class CampaignSimulationHarness
             previous.ObservedCrawlerStall || stalled,
             session.Flasks.CaptureSnapshot().Collected.Count(collected => collected),
             previous.ForcedDarkFlaskTurns + darkTurns,
-            previous.Route + routeName);
+            previous.Route + routeName,
+            previous.Trace.Append(new SimulationTraceStep(
+                routeName,
+                session.Player.Cell,
+                session.Lamp.CaptureSnapshot())).ToArray());
 
     private static bool MeetsGoal(LevelDefinition level, SimulationNode node, SimulationRequirements requirements)
     {
@@ -609,6 +620,7 @@ internal static class CampaignSimulationHarness
         node.FlasksCollected,
         node.ForcedDarkFlaskTurns,
         node.Route,
+        node.Trace,
         $"Won in {node.ActionCount} actions with {node.Wick.CurrentWick} wick after exploring {explored} states. Route: {node.Route}");
 
     private sealed record SimulationNode(
@@ -625,7 +637,8 @@ internal static class CampaignSimulationHarness
         bool ObservedCrawlerStall,
         int FlasksCollected,
         int ForcedDarkFlaskTurns,
-        string Route);
+        string Route,
+        IReadOnlyList<SimulationTraceStep> Trace);
 
     private sealed record SimulationSession(
         PlayerMovementState Player,

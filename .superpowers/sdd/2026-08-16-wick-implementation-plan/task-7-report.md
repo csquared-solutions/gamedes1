@@ -202,3 +202,75 @@ The earlier take-all/skip-all/early/late matrix remains green: take-all finishes
 - Godot is still unavailable on PATH, so live engine startup and human visual/playtest validation remain external follow-up. The parser validates this project's consumed serialization contract but is not a replacement for Godot's complete scene loader.
 - Levels 1-6 have route-order choice but still require every authored flask in the bounded winning scenarios. This is now measured content behavior rather than a test limitation; human playtesting should confirm that timing/path decisions provide sufficient agency.
 - The finite proof covers all flask subsets, all visit permutations, all shortest-path alternatives within each segment, and all bounded lamp timings. It intentionally excludes arbitrary cyclic detours that caused the original nontermination and cannot improve the finite wick budget.
+
+## Fix Round 2
+
+### Findings and Corrections
+
+1. **Observable Level 1 corridor teaching route:** The previous test proved only a late placement action. `LevelTopology.FindTerminalCorridor` now derives a terminal corridor exclusively from floor connectivity: the stair must have degree 1, corridor cells degree 2, and the commitment point degree 3 or greater. Seven Level 1 wall cells create this topology without changing starts, flasks, hazards, stair, movement distance, or wick economy. The finite simulation now returns an action-by-action trace containing player cell and lamp ownership/cell. The winning teaching test structurally discovers commitment `(11,9)` and corridor cells `(12,9)`, `(13,9)`, `(14,9)`, then proves action 13 places the lamp at commitment, all subsequent moves traverse that corridor with the lamp left at `(11,9)`, and the final move reaches the stair.
+2. **Runtime-consumed HUD presentation:** Accessibility copy was removed from `CampaignRuntimeContract.ValidateHud`; the parsed scene contract now validates only required HUD nodes/types. `HudPresentationState` is a pure presentation boundary consumed directly by `HudController._Process`. Behavior tests supply campaign/practice/completion/undo state and assert the visible campaign status, practice/frozen state, undo readiness, and keyboard controls produced by that same runtime code.
+
+### TDD RED Evidence
+
+- Initial focused command:
+  - `dotnet test tests\Wick.Tests\Wick.Tests.csproj --no-restore --filter "FullyQualifiedName~LevelOne_HasAWinningLateLampPlacementTeachingRoute|FullyQualifiedName~HudPresentationStateTests" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Failed compilation because `LevelTopology`, `SimulationResult.Trace`, `HudPresentationState`, and `HudPresentationInput` did not exist.
+- After adding the pure boundaries and runtime HUD wiring, the same command completed in 41 ms with 4 HUD tests passing and the corridor test failing at `Assert.NotNull`: the current Level 1 stair had no structurally valid terminal corridor. This isolated the remaining content defect before geometry changed.
+
+### GREEN and Verification Evidence
+
+- Focused RED-to-GREEN command:
+  - `dotnet test tests\Wick.Tests\Wick.Tests.csproj --no-restore --filter "FullyQualifiedName~LevelOne_HasAWinningLateLampPlacementTeachingRoute|FullyQualifiedName~HudPresentationStateTests" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Passed 5/5 in 142 ms.
+- Covering finite command:
+  - `dotnet test tests\Wick.Tests\Wick.Tests.csproj --no-restore --filter "FullyQualifiedName~CampaignSimulationTests|FullyQualifiedName~HudPresentationStateTests|FullyQualifiedName~GameRootSceneTests" --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Passed 29/29 in 10 seconds; all tests finished normally under the hang collector.
+- Full suite:
+  - `dotnet test tests\Wick.Tests\Wick.Tests.csproj --no-restore --blame-hang --blame-hang-timeout 30s --verbosity minimal`
+  - Passed 99/99 in 11 seconds; all tests finished normally.
+- Build:
+  - `dotnet build Wick.csproj --no-restore --verbosity minimal`
+  - Succeeded in 1.13 seconds with 0 warnings and 0 errors.
+- `git diff --check` completed with no whitespace errors; Git emitted only LF-to-CRLF notices.
+
+### Updated Level 1 Teaching and GDD Check
+
+| Check | Result |
+|---|---|
+| Exact Level 1 values | 12 starting wick, 2 flasks, 2 crawlers, 0 moths, target 2-4; unchanged |
+| Route economy | Existing 15-move flask route preserved; placement adds one explicit action and remains within target band |
+| Fork/dead-end | Existing reachable degree-one teaching branch remains |
+| Corridor commitment | Structurally derived degree-3 cell `(11,9)` |
+| Corridor | Degree-2 `(12,9)`, `(13,9)` leading to degree-1 stair `(14,9)` |
+| Placement behavior | Lamp placed at `(11,9)` on action 13 |
+| Post-placement behavior | Player traverses every corridor cell; lamp remains placed at `(11,9)` |
+| Completion | Trace ends at the authored stair with a winning target-band outcome |
+| Finite bound | Existing selected-flask wick/action and state bounds retained; no cyclic search restored |
+
+### HUD Presentation Behavior
+
+| Input state | Runtime-generated visible output |
+|---|---|
+| Campaign level 4, last clear 5 | `LEVEL 4/7 | LAST CLEAR: 5 WICK`; `CAMPAIGN MODE | P PRACTICE` |
+| Practice level 2, no undo | `LEVEL 2/7`; `PRACTICE MODE | WICK FROZEN | Z UNDO EMPTY` |
+| Practice level 2, undo ready | `LEVEL 2/7`; `PRACTICE MODE | WICK FROZEN | Z UNDO READY` |
+| Completed level 7, wick 3 | `RUN COMPLETE | LEVEL 7 CLEAR: 3 WICK` |
+| Controls in all states | `P PRACTICE | Z UNDO | E SET LAMP | F FLARE | R RESTART` |
+
+### Files Changed
+
+- Added `scripts/data/LevelTopology.cs` for structural terminal-corridor discovery.
+- Added `scripts/ui/HudPresentationState.cs` and runtime consumption in `HudController.cs`.
+- Extended the finite test simulation trace in `CampaignSimulationHarness.cs`.
+- Tightened Level 1 corridor geometry in `LevelLoader.cs` without changing exact economy/counts.
+- Removed accessibility-copy validation from `CampaignSceneManifest.cs`; scene validation remains structural.
+- Added `HudPresentationStateTests.cs` and strengthened the Level 1 teaching route test.
+
+### Fix Round 2 Self-Review and Concerns
+
+- Confirmed the corridor assertion is based on board connectivity, not a teaching flag or authored corridor metadata.
+- Confirmed the trace records actual simulated action outcomes and lamp snapshots; the test does not infer behavior from route text.
+- Confirmed `HudController` calls `HudPresentationState.Create` and assigns all three returned strings to visible labels every frame.
+- Confirmed neither `GameRootSceneTests` nor `CampaignRuntimeContract.ValidateHud` asserts `P PRACTICE` or `Z UNDO` literals.
+- Confirmed all seven-level counts, `+6` flask restoration, target bands, finite route variants, and runtime scene participation remain unchanged.
+- Live Godot startup and visual/human validation remain unavailable in this harness; the pure runtime boundary and parsed node contract do not replace an engine launch.

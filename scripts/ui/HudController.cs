@@ -43,27 +43,18 @@ public partial class HudController : CanvasLayer
         _returnCost.Text = $"RETURN COST { _tether.GetReturnCost() }";
         UpdateHazardState(_crawler, "CRAWLER", _hazards.CrawlerState, _hazards.IsCrawlerVisible);
         UpdateHazardState(_moth, "MOTH", _hazards.MothState, _hazards.IsMothVisible);
-        _campaignStatus.Text = GetCampaignStatus();
-        _practiceStatus.Text = _levels.IsPracticeMode
-            ? $"PRACTICE MODE | WICK FROZEN | Z UNDO {(_levels.CanUndo ? "READY" : "EMPTY")}"
-            : "CAMPAIGN MODE | P PRACTICE";
-        _controls.Text = "P PRACTICE | Z UNDO | E SET LAMP | F FLARE | R RESTART";
+        var presentation = HudPresentationState.Create(new HudPresentationInput(
+            _levels.CurrentLevelIndex,
+            _levels.IsRunComplete,
+            _levels.ReportedRemainingWick,
+            _levels.IsPracticeMode,
+            _levels.CanUndo));
+        _campaignStatus.Text = presentation.CampaignStatus;
+        _practiceStatus.Text = presentation.PracticeStatus;
+        _controls.Text = presentation.Controls;
     }
 
     private void ShowLossCause(string cause) => _lossCause.Text = $"LIGHT OUT: {cause.ToUpperInvariant()}";
-
-    private string GetCampaignStatus()
-    {
-        if (_levels.IsRunComplete)
-        {
-            return $"RUN COMPLETE | LEVEL 7 CLEAR: {_levels.ReportedRemainingWick} WICK";
-        }
-
-        var clearReport = _levels.ReportedRemainingWick >= 0
-            ? $" | LAST CLEAR: {_levels.ReportedRemainingWick} WICK"
-            : string.Empty;
-        return $"LEVEL {_levels.CurrentLevelIndex}/7{clearReport}";
-    }
 
     private static void UpdateHazardState(HazardStateIndicatorController indicator, string name, HazardMotionState state, bool isVisible)
     {
