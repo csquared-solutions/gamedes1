@@ -3,8 +3,12 @@
 [ext_resource type="Script" path="res://scripts/core/TurnManager.cs" id="1_turn_manager"]
 [ext_resource type="Script" path="res://scripts/core/WickSystem.cs" id="2_wick_system"]
 [ext_resource type="Script" path="res://scripts/board/BoardRenderer.cs" id="3_board_renderer"]
+[ext_resource type="Script" path="res://scripts/core/GameEvents.cs" id="4_game_events"]
 
 [node name="GameRoot" type="Node"]
+
+[node name="GameEvents" type="Node" parent="."]
+script = ExtResource("4_game_events")
 
 [node name="TurnManager" type="Node" parent="."]
 script = ExtResource("1_turn_manager")

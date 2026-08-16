@@ -4,10 +4,9 @@ namespace Wick.Core;
 
 public partial class TurnManager : Node
 {
-    public int CurrentTurn { get; private set; }
+    private readonly TurnState _state = new();
 
-    public void AdvanceTurn()
-    {
-        CurrentTurn++;
-    }
+    public int CurrentTurn => _state.CurrentTurn;
+
+    public void AdvanceTurn() => _state.AdvanceTurn();
 }

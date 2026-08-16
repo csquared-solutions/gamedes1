@@ -8,7 +8,7 @@ public sealed class WickSystemTests
     [Fact]
     public void SightRadius_IsFloorOfHalfWick()
     {
-        var wick = new WickSystem();
+        var wick = new WickState();
         wick.Initialize(startingWick: 12);
 
         Assert.Equal(6, wick.CurrentRadius);
@@ -17,11 +17,27 @@ public sealed class WickSystemTests
     [Fact]
     public void Spend_ReducesWick_AndSignalsDepletionAtZero()
     {
-        var wick = new WickSystem();
+        var wick = new WickState();
         wick.Initialize(startingWick: 1);
 
         Assert.True(wick.Spend(1));
         Assert.Equal(0, wick.CurrentWick);
         Assert.True(wick.IsDepleted);
+    }
+
+    [Fact]
+    public void Spend_ReachingZero_RaisesWickChangedAndDepleted()
+    {
+        var wick = new WickState();
+        var wickChanges = new List<int>();
+        var depleted = 0;
+        wick.WickChanged += wickChanges.Add;
+        wick.Depleted += () => depleted++;
+
+        wick.Initialize(startingWick: 1);
+        wick.Spend(1);
+
+        Assert.Equal(new[] { 1, 0 }, wickChanges);
+        Assert.Equal(1, depleted);
     }
 }

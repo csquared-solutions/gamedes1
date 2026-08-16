@@ -8,7 +8,7 @@ public sealed class TurnManagerTests
     [Fact]
     public void AdvanceTurn_IncrementsTurnCounter()
     {
-        var turnManager = new TurnManager();
+        var turnManager = new TurnState();
 
         turnManager.AdvanceTurn();
 

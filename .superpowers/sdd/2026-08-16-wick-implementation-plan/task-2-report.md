@@ -42,3 +42,32 @@ The supplied `Spend_ReducesWick_AndSignalsDepletionAtZero` test expects `Spend(1
 ## Self-Review
 
 No correctness, security, performance, or maintainability findings in the changed runtime code. Board bounds use the intended inclusive lower and exclusive upper limits, and the board renderer adds only the required visibility-state scaffold. The outstanding risk is test infrastructure: use a Godot-aware test runner such as GDUnit4Net with runtime-enabled tests, or extract testable pure state from the `Node` wrappers, in a follow-up task if passing automated tests are required.
+
+## Fix Round 1
+
+### Changes
+
+- Extracted `WickState` and `TurnState` as pure C# state models. The required `WickSystem : Node` and `TurnManager : Node` remain public wrappers around them.
+- Added pure-model event coverage for wick changes and depletion, allowing xUnit to run outside Godot.
+- Added a `GameEvents` node to `GameRoot.tscn`.
+- Wired `WickSystem` to emit `GameEvents.WickChanged` whenever its `WickState` changes and `GameEvents.LightOut("depleted")` when an accepted spend transitions wick from above zero to zero.
+
+### Covering Tests
+
+- `tests/Wick.Tests/WickSystemTests.cs`
+- `tests/Wick.Tests/TurnManagerTests.cs`
+
+Command run:
+
+```powershell
+dotnet test tests\Wick.Tests --filter "FullyQualifiedName~WickSystemTests|FullyQualifiedName~TurnManagerTests"
+dotnet test tests\Wick.Tests
+```
+
+Output:
+
+```text
+Passed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4
+```
+
+The focused run covered the new pure-state behavior, including the `WickChanged` and depletion transition. The full xUnit project produced the same 4/4 passing result. A headless Godot 4.7 editor load also completed project initialization and registered the updated scene scripts without errors.
