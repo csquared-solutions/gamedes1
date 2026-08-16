@@ -81,4 +81,20 @@ public sealed class PlayerMovementStateTests
         Assert.True(lamp.IsCarried);
         Assert.Equal(state.Cell, lamp.Cell);
     }
+
+    [Fact]
+    public void TryMove_FinalWickDepletionReset_DoesNotLeaveStaleAdvancedTurn()
+    {
+        var wick = new WickState();
+        wick.Initialize(1);
+        var turns = new TurnState();
+        wick.Depleted += turns.Reset;
+        var lamp = new LampState(new GridCoord(2, 2));
+        var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
+
+        Assert.True(state.TryMove(new GridCoord(1, 0)));
+
+        Assert.Equal(0, wick.CurrentWick);
+        Assert.Equal(0, turns.CurrentTurn);
+    }
 }

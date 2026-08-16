@@ -40,18 +40,19 @@ public sealed class PlayerMovementState
         }
 
         var target = Cell + direction;
-        if (!_board.IsWalkable(target) || !_wick.Spend(1))
+        if (!_board.IsWalkable(target) || _wick.CurrentWick < 1)
         {
             return false;
         }
 
+        _turns.AdvanceTurn();
+        _wick.Spend(1);
         Cell = target;
         if (_lamp.IsCarried)
         {
             _lamp.AttachToPlayer(Cell);
         }
 
-        _turns.AdvanceTurn();
         RefreshVisibility();
         return true;
     }

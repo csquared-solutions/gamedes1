@@ -4,6 +4,10 @@
 [ext_resource type="Script" path="res://scripts/core/WickSystem.cs" id="2_wick_system"]
 [ext_resource type="Script" path="res://scripts/core/GameEvents.cs" id="4_game_events"]
 [ext_resource type="PackedScene" path="res://scenes/board/Board.tscn" id="5_board"]
+[ext_resource type="Script" path="res://scripts/core/LevelManager.cs" id="6_level_manager"]
+[ext_resource type="PackedScene" path="res://scenes/actors/Player.tscn" id="7_player"]
+[ext_resource type="PackedScene" path="res://scenes/actors/Lamp.tscn" id="8_lamp"]
+[ext_resource type="PackedScene" path="res://scenes/goals/Stair.tscn" id="9_stair"]
 
 [node name="GameRoot" type="Node"]
 
@@ -17,3 +21,12 @@ script = ExtResource("1_turn_manager")
 script = ExtResource("2_wick_system")
 
 [node name="Board" parent="." instance=ExtResource("5_board")]
+
+[node name="Player" parent="." instance=ExtResource("7_player")]
+
+[node name="Lamp" parent="." instance=ExtResource("8_lamp")]
+
+[node name="Stair" parent="." instance=ExtResource("9_stair")]
+
+[node name="LevelManager" type="Node" parent="."]
+script = ExtResource("6_level_manager")

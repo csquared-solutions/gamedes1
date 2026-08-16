@@ -65,7 +65,7 @@ public partial class LevelManager : Node
         _stair.TryEnter(cell);
     }
 
-    private void OnLightOut(string cause) => RestartLevel();
+    private void OnLightOut(string cause) => CallDeferred(nameof(RestartLevel));
 
     private void OnStairReached()
     {

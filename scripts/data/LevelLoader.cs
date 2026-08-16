@@ -42,7 +42,7 @@ public sealed class LevelLoader
             StartingWick = 12,
             PlayerStart = new GridCoord(2, 6),
             LampStart = new GridCoord(2, 6),
-            StairCell = new GridCoord(16, 6),
+            StairCell = new GridCoord(13, 6),
             Walls = walls.ToArray()
         };
     }
