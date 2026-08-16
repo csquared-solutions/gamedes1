@@ -1,3 +1,5 @@
 .superpowers/
 /.godot/
 *.cs.uid
+**/bin/
+**/obj/

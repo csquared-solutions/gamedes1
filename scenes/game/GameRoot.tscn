@@ -1,3 +1,16 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://scripts/core/TurnManager.cs" id="1_turn_manager"]
+[ext_resource type="Script" path="res://scripts/core/WickSystem.cs" id="2_wick_system"]
+[ext_resource type="Script" path="res://scripts/board/BoardRenderer.cs" id="3_board_renderer"]
+
 [node name="GameRoot" type="Node"]
+
+[node name="TurnManager" type="Node" parent="."]
+script = ExtResource("1_turn_manager")
+
+[node name="WickSystem" type="Node" parent="."]
+script = ExtResource("2_wick_system")
+
+[node name="BoardRenderer" type="Node" parent="."]
+script = ExtResource("3_board_renderer")
