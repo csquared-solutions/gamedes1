@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://scripts/core/TurnManager.cs" id="1_turn_manager"]
 [ext_resource type="Script" path="res://scripts/core/WickSystem.cs" id="2_wick_system"]
-[ext_resource type="Script" path="res://scripts/board/BoardRenderer.cs" id="3_board_renderer"]
 [ext_resource type="Script" path="res://scripts/core/GameEvents.cs" id="4_game_events"]
+[ext_resource type="PackedScene" path="res://scenes/board/Board.tscn" id="5_board"]
 
 [node name="GameRoot" type="Node"]
 
@@ -16,5 +16,4 @@ script = ExtResource("1_turn_manager")
 [node name="WickSystem" type="Node" parent="."]
 script = ExtResource("2_wick_system")
 
-[node name="BoardRenderer" type="Node" parent="."]
-script = ExtResource("3_board_renderer")
+[node name="Board" parent="." instance=ExtResource("5_board")]
