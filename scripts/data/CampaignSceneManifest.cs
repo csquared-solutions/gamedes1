@@ -170,7 +170,7 @@ public static class CampaignRuntimeContract
         Require(string.IsNullOrEmpty(root.Parent), $"Campaign level {entry.Index} root cannot have a parent.");
         Require(scene.ResolveNodeResourcePath(root) == "res://scripts/data/CampaignLevelScene.cs",
             $"Campaign level {entry.Index} does not use CampaignLevelScene.");
-        Require(root.Properties.TryGetValue("index", out var value) && int.TryParse(value, out var index) && index == entry.Index,
+        Require(root.Properties.TryGetValue("Index", out var value) && int.TryParse(value, out var index) && index == entry.Index,
             $"Campaign level scene index does not match manifest index {entry.Index}.");
     }
 

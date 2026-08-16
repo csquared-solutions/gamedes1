@@ -5,6 +5,12 @@
 [node name="OilFlask" type="Node2D"]
 script = ExtResource("1_oil_flask")
 
-[node name="Body" type="Polygon2D" parent="."]
+[node name="FlaskSilhouette" type="Node2D" parent="."]
+
+[node name="Bottle" type="Polygon2D" parent="FlaskSilhouette"]
 polygon = PackedVector2Array(-10, -14, 10, -14, 13, 12, -13, 12)
-color = Color(0.28, 0.68, 0.46, 1)
+color = Color(1, 0.902, 0.639, 1)
+
+[node name="OilBand" type="Polygon2D" parent="FlaskSilhouette"]
+polygon = PackedVector2Array(-10, 2, 10, 2, 12, 10, -12, 10)
+color = Color(0.2, 0.18, 0.13, 1)

@@ -2,6 +2,12 @@
 
 [node name="Moth" type="Node2D"]
 
-[node name="Body" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(-14, -10, 0, 0, -14, 10, 14, 10, 0, 0, 14, -10)
-color = Color(0.82, 0.68, 0.2, 1)
+[node name="MothSilhouette" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -21, 5, -9, 14, -15, 12, -2, 18, 8, 6, 6, 2, 20, -2, 20, -6, 6, -18, 8, -12, -2, -14, -15, -5, -9)
+color = Color(0.816, 0.659, 0.306, 1)
+
+[node name="MothOutline" type="Line2D" parent="."]
+points = PackedVector2Array(0, -21, 5, -9, 14, -15, 12, -2, 18, 8, 6, 6, 2, 20, -2, 20, -6, 6, -18, 8, -12, -2, -14, -15, -5, -9)
+width = 2.0
+default_color = Color(1, 0.957, 0.812, 1)
+closed = true

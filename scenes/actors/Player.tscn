@@ -4,3 +4,13 @@
 
 [node name="Player" type="Node2D"]
 script = ExtResource("1_player")
+
+[node name="WickSilhouette" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -19, 8, -10, 11, 3, 8, 16, 0, 20, -8, 16, -11, 3, -8, -10)
+color = Color(1, 0.957, 0.812, 1)
+
+[node name="Outline" type="Line2D" parent="."]
+points = PackedVector2Array(0, -19, 8, -10, 11, 3, 8, 16, 0, 20, -8, 16, -11, 3, -8, -10)
+width = 2.0
+default_color = Color(0.035, 0.039, 0.047, 1)
+closed = true

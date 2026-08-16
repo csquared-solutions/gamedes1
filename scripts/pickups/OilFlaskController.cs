@@ -6,6 +6,7 @@ using Wick.Actors;
 using Wick.Board;
 using Wick.Core;
 using Wick.Data;
+using Wick.Ui;
 
 namespace Wick.Pickups;
 
@@ -116,9 +117,29 @@ public sealed class OilFlaskCollectionState
 
 public sealed record OilFlaskCollectionSnapshot(bool[] Collected);
 
+public sealed class FlaskPresentationState
+{
+    private int _displayWick;
+
+    public bool IsActive { get; private set; }
+
+    public void Begin(int displayWick)
+    {
+        _displayWick = displayWick;
+        IsActive = true;
+    }
+
+    public void Complete() => IsActive = false;
+
+    public int GetDisplayedWick(int actualWick) => IsActive ? _displayWick : actualWick;
+
+    public int GetDisplayedRadius(int actualRadius) => IsActive ? 0 : actualRadius;
+}
+
 public static class OilFlaskInputPolicy
 {
     public static bool ShouldUnlockAfterLift(bool isTerminal) => !isTerminal;
+    public static bool ShouldRestoreLightAfterLift(bool isTerminal) => !isTerminal;
 }
 
 public partial class OilFlaskController : Node2D
@@ -134,8 +155,12 @@ public partial class OilFlaskController : Node2D
     private Func<bool> _canContinueLift;
     private OilFlaskCollectionState _state;
     private readonly List<Node2D> _markers = new();
+    private readonly FlaskPresentationState _presentation = new();
+    private int _presentationVersion;
 
     public OilFlaskCollectionState State => _state;
+    public int DisplayedWick => _presentation.GetDisplayedWick(_wick?.CurrentWick ?? 0);
+    public int DisplayedRadius => _presentation.GetDisplayedRadius(_wick?.CurrentRadius ?? 0);
 
     public void Configure(
         WickSystem wick,
@@ -147,6 +172,8 @@ public partial class OilFlaskController : Node2D
         Func<bool> canContinueLift,
         IEnumerable<GridCoord> flaskCells)
     {
+        _presentationVersion++;
+        _presentation.Complete();
         _wick = wick;
         _turns = turns;
         _player = player;
@@ -169,14 +196,34 @@ public partial class OilFlaskController : Node2D
 
         _player.LockInput();
         _visibility.ForceDarkness();
+        _presentation.Begin(_wick.CurrentWick);
         var lifted = _state.TryBeginLift(playerCell, _canContinueLift);
         RefreshMarkers();
-        _onLiftCompleted?.Invoke();
-        if (OilFlaskInputPolicy.ShouldUnlockAfterLift(!(_canContinueLift?.Invoke() ?? true)))
+        FinishLiftPresentation(_presentationVersion);
+        return lifted;
+    }
+
+    private async void FinishLiftPresentation(int version)
+    {
+        await ToSignal(
+            GetTree().CreateTimer(PresentationTiming.FlaskDarknessSeconds),
+            SceneTreeTimer.SignalName.Timeout);
+        if (version != _presentationVersion)
+        {
+            return;
+        }
+
+        _presentation.Complete();
+        var isTerminal = !(_canContinueLift?.Invoke() ?? true);
+        if (OilFlaskInputPolicy.ShouldRestoreLightAfterLift(isTerminal))
+        {
+            _onLiftCompleted?.Invoke();
+        }
+
+        if (OilFlaskInputPolicy.ShouldUnlockAfterLift(isTerminal))
         {
             _player.UnlockInput();
         }
-        return lifted;
     }
 
     private void OnTurnSpent(int radiusOverride) => _onTurnSpent?.Invoke(radiusOverride);
@@ -187,6 +234,8 @@ public partial class OilFlaskController : Node2D
         RefreshMarkers();
     }
 
+    public void RefreshVisibility() => RefreshMarkers();
+
     private void RebuildMarkers()
     {
         for (var index = 1; index < _markers.Count; index++)
@@ -195,7 +244,7 @@ public partial class OilFlaskController : Node2D
         }
 
         _markers.Clear();
-        var template = GetNode<Node2D>("Body");
+        var template = GetNode<Node2D>("FlaskSilhouette");
         template.Visible = _state.Cells.Count > 0;
         if (_state.Cells.Count == 0)
         {
@@ -219,7 +268,10 @@ public partial class OilFlaskController : Node2D
         {
             var cell = _state.Cells[index];
             _markers[index].Position = BoardOrigin + new Vector2((cell.X + 0.5f) * CellSize, (cell.Y + 0.5f) * CellSize);
-            _markers[index].Visible = !_state.IsCollected(cell);
+            _markers[index].Visible = WorldMarkerReadability.ShouldShow(
+                _visibility.Visibility,
+                cell,
+                _state.IsCollected(cell));
         }
     }
 }

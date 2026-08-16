@@ -4,4 +4,4 @@
 
 [node name="Level07" type="Node"]
 script = ExtResource("1_level")
-index = 7
+Index = 7

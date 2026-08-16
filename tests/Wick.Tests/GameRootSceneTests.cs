@@ -25,6 +25,19 @@ public sealed class GameRootSceneTests
         CampaignRuntimeContract.ValidateHud(scene);
     }
 
+    [Fact]
+    public void CampaignScenes_UseTheCSharpExportPropertyNameGodotLoads()
+    {
+        for (var index = 1; index <= 7; index++)
+        {
+            var scenePath = FindProjectFile("scenes", "levels", $"Level{index:00}.tscn");
+            var root = GodotTextSceneContract.ParseFile(scenePath).RequireNode($"Level{index:00}");
+
+            Assert.True(root.Properties.TryGetValue("Index", out var value), $"Level {index} must serialize the C# Index export using exact casing.");
+            Assert.Equal(index.ToString(), value);
+        }
+    }
+
     private static string FindProjectFile(params string[] relativePath)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

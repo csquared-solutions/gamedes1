@@ -5,6 +5,7 @@ using Wick.Board;
 using Wick.Data;
 using Wick.Goals;
 using Wick.Hazards;
+using Wick.Ui;
 
 namespace Wick.Core;
 
@@ -29,11 +30,13 @@ public partial class LevelManager : Node
     private GameplaySnapshot _pendingAction;
     private bool _isTerminal;
     private int _reportedRemainingWick = -1;
+    private int _presentationGeneration;
 
     public bool IsPracticeMode => _practice.IsEnabled;
     public bool CanUndo => _practice.CanUndo;
     public int CurrentLevelIndex => _session.ActiveLevelIndex;
     public bool IsRunComplete => _session.IsActiveComplete;
+    public bool IsTerminal => _isTerminal;
     public int ReportedRemainingWick => _reportedRemainingWick;
 
     public override void _Ready()
@@ -59,7 +62,15 @@ public partial class LevelManager : Node
         _stair.Reached += OnStairReached;
         _events.Connect(GameEvents.SignalName.LightOut, Callable.From<string>(OnLightOut));
 
+        CallDeferred(nameof(LoadInitialLevel));
+    }
+
+    public void BeginGame() => _player.UnlockInput();
+
+    private void LoadInitialLevel()
+    {
         LoadCampaignLevel(1);
+        _player.LockInput();
     }
 
     public void LoadCampaignLevel(int index)
@@ -142,6 +153,7 @@ public partial class LevelManager : Node
 
     private void LoadActiveLevel(int index, bool preserveUndo)
     {
+        _presentationGeneration++;
         ActivateCampaignScene(index);
         _currentLevel = _campaignScene.Definition;
         _board = new BoardState(_currentLevel.Width, _currentLevel.Height, _currentLevel.Walls);
@@ -151,7 +163,7 @@ public partial class LevelManager : Node
         _turns.Reset();
         _player.Initialize(_board, _wick, _turns, _lamp, _currentLevel.PlayerStart, _visibility);
         _player.UnlockInput();
-        _stair.Configure(_currentLevel.StairCell);
+        _stair.Configure(_currentLevel.StairCell, _visibility);
         _boardRenderer.Configure(_board, _visibility, _lamp.Cell, _wick.CurrentRadius);
         _hazards.Initialize(
             _board,
@@ -312,7 +324,9 @@ public partial class LevelManager : Node
     private void RefreshTacticalState()
     {
         _boardRenderer.RecomputeVisibility(_lamp.Cell, _wick.CurrentRadius);
+        _stair.RefreshVisibility();
         _hazards.RefreshVisibility();
+        _oilFlask.RefreshVisibility();
     }
 
     private void OnLightOut(string cause)
@@ -324,9 +338,13 @@ public partial class LevelManager : Node
 
         _isTerminal = true;
         _player.LockInput();
+        _boardRenderer.ForceDarkness();
+        _stair.RefreshVisibility();
+        _hazards.RefreshVisibility();
+        _oilFlask.RefreshVisibility();
         if (!IsPracticeMode)
         {
-            CallDeferred(nameof(RestartLevel));
+            RestartAfterPresentation(_presentationGeneration);
         }
     }
 
@@ -341,7 +359,29 @@ public partial class LevelManager : Node
         _isTerminal = true;
         _player.LockInput();
         _events.EmitSignal(GameEvents.SignalName.LevelCleared, _currentLevel.Index, _reportedRemainingWick);
-        CallDeferred(nameof(AdvanceCampaignAfterClear));
+        AdvanceCampaignAfterPresentation(_presentationGeneration);
+    }
+
+    private async void RestartAfterPresentation(int generation)
+    {
+        await ToSignal(
+            GetTree().CreateTimer(PresentationTiming.EndStateSeconds),
+            SceneTreeTimer.SignalName.Timeout);
+        if (generation == _presentationGeneration && _isTerminal)
+        {
+            RestartLevel();
+        }
+    }
+
+    private async void AdvanceCampaignAfterPresentation(int generation)
+    {
+        await ToSignal(
+            GetTree().CreateTimer(PresentationTiming.EndStateSeconds),
+            SceneTreeTimer.SignalName.Timeout);
+        if (generation == _presentationGeneration && _isTerminal)
+        {
+            AdvanceCampaignAfterClear();
+        }
     }
 
     private void AdvanceCampaignAfterClear()

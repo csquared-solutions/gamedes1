@@ -8,6 +8,32 @@ namespace Wick.Tests;
 public sealed class OilFlaskStateTests
 {
     [Fact]
+    public void LiftPresentation_ShowsPreCompletionWickAtRadiusZeroUntilReleased()
+    {
+        var presentation = new FlaskPresentationState();
+
+        presentation.Begin(displayWick: 8);
+
+        Assert.True(presentation.IsActive);
+        Assert.Equal(8, presentation.GetDisplayedWick(actualWick: 12));
+        Assert.Equal(0, presentation.GetDisplayedRadius(actualRadius: 6));
+
+        presentation.Complete();
+
+        Assert.False(presentation.IsActive);
+        Assert.Equal(12, presentation.GetDisplayedWick(actualWick: 12));
+        Assert.Equal(6, presentation.GetDisplayedRadius(actualRadius: 6));
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void LiftPresentation_RestoresLightOnlyWhenTheLiftIsNonTerminal(bool terminal, bool expected)
+    {
+        Assert.Equal(expected, OilFlaskInputPolicy.ShouldRestoreLightAfterLift(terminal));
+    }
+
+    [Fact]
     public void FlaskLift_ConsumesTwoTurns_ThenRestoresSixWick()
     {
         var wick = new WickState();

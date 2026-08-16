@@ -10,6 +10,7 @@ config_version=5
 
 config/name="Wick"
 run/main_scene="res://scenes/game/GameRoot.tscn"
+config/icon="res://assets/art/wick-mark.svg"
 
 [display]
 
@@ -20,5 +21,6 @@ window/size/window_height_override=832
 
 [rendering]
 
+environment/defaults/default_clear_color=Color(0.016, 0.018, 0.023, 1)
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"

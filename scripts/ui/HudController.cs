@@ -2,6 +2,7 @@ using Godot;
 using Wick.Actors;
 using Wick.Core;
 using Wick.Hazards;
+using Wick.Pickups;
 
 namespace Wick.Ui;
 
@@ -19,6 +20,7 @@ public partial class HudController : CanvasLayer
     private Label _campaignStatus;
     private Label _practiceStatus;
     private Label _controls;
+    private OilFlaskController _oilFlask;
 
     public override void _Ready()
     {
@@ -34,12 +36,13 @@ public partial class HudController : CanvasLayer
         _campaignStatus = GetNode<Label>("Margin/Panel/Content/CampaignStatus");
         _practiceStatus = GetNode<Label>("Margin/Panel/Content/PracticeStatus");
         _controls = GetNode<Label>("Margin/Panel/Content/Controls");
+        _oilFlask = GetNode<OilFlaskController>("../OilFlask");
         GetNode<GameEvents>("../GameEvents").Connect(GameEvents.SignalName.LightOut, Callable.From<string>(ShowLossCause));
     }
 
     public override void _Process(double delta)
     {
-        _gauge.SetWick(_wick.CurrentWick, _wick.CurrentRadius);
+        _gauge.SetWick(_oilFlask.DisplayedWick, _oilFlask.DisplayedRadius);
         _returnCost.Text = $"RETURN COST { _tether.GetReturnCost() }";
         UpdateHazardState(_crawler, "CRAWLER", _hazards.CrawlerState, _hazards.IsCrawlerVisible);
         UpdateHazardState(_moth, "MOTH", _hazards.MothState, _hazards.IsMothVisible);
@@ -52,6 +55,10 @@ public partial class HudController : CanvasLayer
         _campaignStatus.Text = presentation.CampaignStatus;
         _practiceStatus.Text = presentation.PracticeStatus;
         _controls.Text = presentation.Controls;
+        if (!_levels.IsTerminal)
+        {
+            _lossCause.Text = string.Empty;
+        }
     }
 
     private void ShowLossCause(string cause) => _lossCause.Text = $"LIGHT OUT: {cause.ToUpperInvariant()}";

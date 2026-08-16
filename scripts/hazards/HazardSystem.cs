@@ -24,6 +24,7 @@ public partial class HazardSystem : Node
     public HazardMotionState MothState => AggregateMotion(State?.MothMotion);
     public bool IsCrawlerVisible => State is not null && State.CrawlerCells.Any(cell => HazardReadability.IsVisible(_visibility, cell));
     public bool IsMothVisible => State is not null && State.MothCells.Any(cell => HazardReadability.IsVisible(_visibility, cell));
+    public bool HasMoths => State is not null && State.MothCells.Count > 0;
 
     public void Initialize(
         BoardState board,
