@@ -51,13 +51,14 @@ public partial class HudController : CanvasLayer
             _levels.IsRunComplete,
             _levels.ReportedRemainingWick,
             _levels.IsPracticeMode,
-            _levels.CanUndo));
+            _levels.CanUndo,
+            _levels.IsExitBlockedByCarriedLamp));
         _campaignStatus.Text = presentation.CampaignStatus;
         _practiceStatus.Text = presentation.PracticeStatus;
         _controls.Text = presentation.Controls;
         if (!_levels.IsTerminal)
         {
-            _lossCause.Text = string.Empty;
+            _lossCause.Text = presentation.ExitPrompt;
         }
     }
 

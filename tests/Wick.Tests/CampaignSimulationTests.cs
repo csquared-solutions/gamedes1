@@ -138,6 +138,9 @@ public sealed class CampaignSimulationTests
         Assert.True(StairEntryRule.CanEnter(levelTwo, levelTwo.StairCell, lampIsCarried: true));
         Assert.False(StairEntryRule.CanEnter(levelThree, levelThree.StairCell, lampIsCarried: true));
         Assert.True(StairEntryRule.CanEnter(levelThree, levelThree.StairCell, lampIsCarried: false));
+        Assert.True(StairEntryRule.IsBlockedByCarriedLamp(levelThree, levelThree.StairCell, lampIsCarried: true));
+        Assert.False(StairEntryRule.IsBlockedByCarriedLamp(levelThree, levelThree.PlayerStart, lampIsCarried: true));
+        Assert.False(StairEntryRule.IsBlockedByCarriedLamp(levelTwo, levelTwo.StairCell, lampIsCarried: true));
     }
 
     [Fact]

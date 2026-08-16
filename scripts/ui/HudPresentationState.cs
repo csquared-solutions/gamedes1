@@ -5,12 +5,14 @@ public readonly record struct HudPresentationInput(
     bool IsRunComplete,
     int ReportedRemainingWick,
     bool IsPracticeMode,
-    bool CanUndo);
+    bool CanUndo,
+    bool IsExitBlockedByCarriedLamp = false);
 
 public readonly record struct HudPresentation(
     string CampaignStatus,
     string PracticeStatus,
-    string Controls);
+    string Controls,
+    string ExitPrompt);
 
 public static class HudPresentationState
 {
@@ -27,6 +29,9 @@ public static class HudPresentationState
         return new HudPresentation(
             campaignStatus,
             practiceStatus,
-            "P PRACTICE | Z UNDO | E SET LAMP | F FLARE | R RESTART");
+            "P PRACTICE | Z UNDO | E SET LAMP | F FLARE | R RESTART",
+            input.IsExitBlockedByCarriedLamp
+                ? "EXIT BLOCKED: STEP BACK, PRESS E TO SET LAMP, THEN RETURN"
+                : string.Empty);
     }
 }

@@ -37,6 +37,10 @@ public partial class LevelManager : Node
     public int CurrentLevelIndex => _session.ActiveLevelIndex;
     public bool IsRunComplete => _session.IsActiveComplete;
     public bool IsTerminal => _isTerminal;
+    public bool IsExitBlockedByCarriedLamp => _currentLevel is not null &&
+        _player is not null &&
+        _lamp is not null &&
+        StairEntryRule.IsBlockedByCarriedLamp(_currentLevel, _player.Cell, _lamp.State.IsCarried);
     public int ReportedRemainingWick => _reportedRemainingWick;
 
     public override void _Ready()

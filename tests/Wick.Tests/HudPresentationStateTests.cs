@@ -48,4 +48,18 @@ public sealed class HudPresentationStateTests
 
         Assert.Equal("RUN COMPLETE | LEVEL 7 CLEAR: 3 WICK", presentation.CampaignStatus);
     }
+
+    [Fact]
+    public void CarriedLampAtRequiredExit_ExplainsHowToAdvance()
+    {
+        var presentation = HudPresentationState.Create(new HudPresentationInput(
+            LevelIndex: 3,
+            IsRunComplete: false,
+            ReportedRemainingWick: -1,
+            IsPracticeMode: false,
+            CanUndo: false,
+            IsExitBlockedByCarriedLamp: true));
+
+        Assert.Equal("EXIT BLOCKED: STEP BACK, PRESS E TO SET LAMP, THEN RETURN", presentation.ExitPrompt);
+    }
 }
