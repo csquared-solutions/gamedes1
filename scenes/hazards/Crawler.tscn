@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[node name="Crawler" type="Node2D"]
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-14, -10, 14, 0, -14, 10)
+color = Color(0.55, 0.18, 0.12, 1)

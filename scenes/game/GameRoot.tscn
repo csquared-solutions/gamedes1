@@ -8,6 +8,9 @@
 [ext_resource type="PackedScene" path="res://scenes/actors/Player.tscn" id="7_player"]
 [ext_resource type="PackedScene" path="res://scenes/actors/Lamp.tscn" id="8_lamp"]
 [ext_resource type="PackedScene" path="res://scenes/goals/Stair.tscn" id="9_stair"]
+[ext_resource type="Script" path="res://scripts/hazards/HazardSystem.cs" id="10_hazards"]
+[ext_resource type="PackedScene" path="res://scenes/hazards/Crawler.tscn" id="11_crawler"]
+[ext_resource type="PackedScene" path="res://scenes/hazards/Moth.tscn" id="12_moth"]
 
 [node name="GameRoot" type="Node"]
 
@@ -27,6 +30,13 @@ script = ExtResource("2_wick_system")
 [node name="Lamp" parent="." instance=ExtResource("8_lamp")]
 
 [node name="Stair" parent="." instance=ExtResource("9_stair")]
+
+[node name="Crawler" parent="." instance=ExtResource("11_crawler")]
+
+[node name="Moth" parent="." instance=ExtResource("12_moth")]
+
+[node name="HazardSystem" type="Node" parent="."]
+script = ExtResource("10_hazards")
 
 [node name="LevelManager" type="Node" parent="."]
 script = ExtResource("6_level_manager")

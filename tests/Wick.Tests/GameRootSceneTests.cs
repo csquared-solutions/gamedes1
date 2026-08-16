@@ -8,7 +8,7 @@ namespace Wick.Tests;
 public sealed class GameRootSceneTests
 {
     [Fact]
-    public void GameRoot_InstancesTheTaskFourRuntimeControllers()
+    public void GameRoot_InstancesTheRuntimeControllers()
     {
         var scenePath = FindProjectFile("scenes", "game", "GameRoot.tscn");
         var scene = File.ReadAllText(scenePath);
@@ -17,9 +17,15 @@ public sealed class GameRootSceneTests
         Assert.Contains("res://scenes/actors/Player.tscn", scene);
         Assert.Contains("res://scenes/actors/Lamp.tscn", scene);
         Assert.Contains("res://scenes/goals/Stair.tscn", scene);
+        Assert.Contains("res://scripts/hazards/HazardSystem.cs", scene);
+        Assert.Contains("res://scenes/hazards/Crawler.tscn", scene);
+        Assert.Contains("res://scenes/hazards/Moth.tscn", scene);
         Assert.Contains("[node name=\"Player\" parent=\".\"", scene);
         Assert.Contains("[node name=\"Lamp\" parent=\".\"", scene);
         Assert.Contains("[node name=\"Stair\" parent=\".\"", scene);
+        Assert.Contains("[node name=\"Crawler\" parent=\".\"", scene);
+        Assert.Contains("[node name=\"Moth\" parent=\".\"", scene);
+        Assert.Contains("[node name=\"HazardSystem\" type=\"Node\" parent=\".\"]", scene);
         Assert.Contains("[node name=\"LevelManager\" type=\"Node\" parent=\".\"]", scene);
     }
 

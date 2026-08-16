@@ -3,6 +3,7 @@ using Wick.Actors;
 using Wick.Board;
 using Wick.Data;
 using Wick.Goals;
+using Wick.Hazards;
 
 namespace Wick.Core;
 
@@ -19,6 +20,7 @@ public partial class LevelManager : Node
     private WickSystem _wick;
     private TurnManager _turns;
     private GameEvents _events;
+    private HazardSystem _hazards;
 
     public override void _Ready()
     {
@@ -29,6 +31,7 @@ public partial class LevelManager : Node
         _wick = GetNode<WickSystem>("../WickSystem");
         _turns = GetNode<TurnManager>("../TurnManager");
         _events = GetNode<GameEvents>("../GameEvents");
+        _hazards = GetNode<HazardSystem>("../HazardSystem");
 
         _player.CellChanged += OnPlayerMoved;
         _player.RestartRequested += RestartLevel;
@@ -49,6 +52,14 @@ public partial class LevelManager : Node
         _player.Initialize(_board, _wick, _turns, _lamp, _currentLevel.PlayerStart, _visibility);
         _stair.Configure(_currentLevel.StairCell);
         _boardRenderer.Configure(_board, _visibility, _lamp.Cell, _wick.CurrentRadius);
+        _hazards.Initialize(
+            _board,
+            _visibility,
+            _lamp,
+            _wick,
+            _events,
+            GetNode<Node2D>("../Crawler"),
+            GetNode<Node2D>("../Moth"));
     }
 
     public void RestartLevel()
@@ -63,6 +74,7 @@ public partial class LevelManager : Node
     {
         _boardRenderer.RecomputeVisibility(_lamp.Cell, _wick.CurrentRadius);
         _stair.TryEnter(cell);
+        _hazards.AdvanceTurn();
     }
 
     private void OnLightOut(string cause) => CallDeferred(nameof(RestartLevel));
