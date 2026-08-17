@@ -33,7 +33,12 @@ public sealed class LevelLoader
     private static IEnumerable<LevelDefinition> CreateCampaign()
     {
         yield return CreateLevel(
-            1, 12, new GridCoord(2, 6), new[] { new GridCoord(14, 9), new GridCoord(6, 1), new GridCoord(4, 11) },
+            1, 12, new GridCoord(2, 6), new GridCoord(14, 9), new[]
+            {
+                new GridCoord(12, 5), new GridCoord(12, 6), new GridCoord(12, 7),
+                new GridCoord(12, 9), new GridCoord(12, 11), new GridCoord(13, 6),
+                new GridCoord(13, 9), new GridCoord(14, 9)
+            },
             crawlers: new[] { new GridCoord(2, 2), new GridCoord(2, 10) },
             moths: Array.Empty<GridCoord>(),
             flasks: new[] { new GridCoord(6, 6), new GridCoord(10, 8) },
@@ -49,7 +54,16 @@ public sealed class LevelLoader
                     new GridCoord(15, 9)
                 }));
         yield return CreateLevel(
-            2, 12, new GridCoord(2, 9), new[] { new GridCoord(14, 3), new GridCoord(1, 1), new GridCoord(7, 11) },
+            2, 12, new GridCoord(2, 9), new GridCoord(14, 3), new[]
+            {
+                new GridCoord(12, 1), new GridCoord(12, 2), new GridCoord(12, 3),
+                new GridCoord(12, 4), new GridCoord(12, 5), new GridCoord(12, 6),
+                new GridCoord(12, 9), new GridCoord(12, 10), new GridCoord(12, 11),
+                new GridCoord(13, 2), new GridCoord(13, 3), new GridCoord(13, 4),
+                new GridCoord(13, 5), new GridCoord(13, 6), new GridCoord(13, 10),
+                new GridCoord(13, 11), new GridCoord(14, 3), new GridCoord(14, 4),
+                new GridCoord(14, 5), new GridCoord(14, 11), new GridCoord(15, 4)
+            },
             crawlers: new[] { new GridCoord(2, 11), new GridCoord(4, 11) },
             moths: new[] { new GridCoord(16, 11) },
             flasks: new[] { new GridCoord(6, 9), new GridCoord(9, 6) },
@@ -59,7 +73,17 @@ public sealed class LevelLoader
                 HorizontalWall(11, 16, 7, 14),
                 new[] { new GridCoord(15, 11), new GridCoord(17, 11) }));
         yield return CreateLevel(
-            3, 12, new GridCoord(2, 6), new[] { new GridCoord(16, 6), new GridCoord(4, 1), new GridCoord(4, 11) },
+            3, 12, new GridCoord(2, 6), new GridCoord(16, 6), new[]
+            {
+                new GridCoord(12, 1), new GridCoord(12, 11), new GridCoord(13, 2),
+                new GridCoord(13, 3), new GridCoord(13, 4), new GridCoord(13, 8),
+                new GridCoord(13, 9), new GridCoord(13, 10), new GridCoord(14, 3),
+                new GridCoord(14, 4), new GridCoord(14, 5), new GridCoord(14, 7),
+                new GridCoord(14, 8), new GridCoord(14, 9), new GridCoord(15, 4),
+                new GridCoord(15, 5), new GridCoord(15, 6), new GridCoord(15, 7),
+                new GridCoord(15, 8), new GridCoord(16, 5), new GridCoord(16, 6),
+                new GridCoord(16, 7), new GridCoord(17, 6)
+            },
             crawlers: new[] { new GridCoord(2, 2), new GridCoord(2, 10), new GridCoord(4, 2) },
             moths: new[] { new GridCoord(1, 1) },
             flasks: new[] { new GridCoord(6, 6), new GridCoord(11, 6) },
@@ -75,7 +99,24 @@ public sealed class LevelLoader
                 }),
             requiresLampPlacement: true);
         yield return CreateLevel(
-            4, 14, new GridCoord(2, 10), new[] { new GridCoord(16, 2), new GridCoord(8, 11), new GridCoord(4, 5) },
+            4, 14, new GridCoord(2, 10), new GridCoord(16, 2), new[]
+            {
+                new GridCoord(12, 2), new GridCoord(12, 3), new GridCoord(12, 4),
+                new GridCoord(12, 5), new GridCoord(12, 6), new GridCoord(12, 8),
+                new GridCoord(12, 9), new GridCoord(12, 10), new GridCoord(12, 11),
+                new GridCoord(13, 1), new GridCoord(13, 2), new GridCoord(13, 3),
+                new GridCoord(13, 5), new GridCoord(13, 6), new GridCoord(13, 7),
+                new GridCoord(13, 8), new GridCoord(13, 9), new GridCoord(13, 10),
+                new GridCoord(13, 11), new GridCoord(14, 2), new GridCoord(14, 3),
+                new GridCoord(14, 4), new GridCoord(14, 5), new GridCoord(14, 6),
+                new GridCoord(14, 8), new GridCoord(14, 9), new GridCoord(14, 10),
+                new GridCoord(15, 1), new GridCoord(15, 2), new GridCoord(15, 3),
+                new GridCoord(15, 4), new GridCoord(15, 5), new GridCoord(15, 6),
+                new GridCoord(15, 8), new GridCoord(15, 9), new GridCoord(16, 2),
+                new GridCoord(16, 3), new GridCoord(16, 4), new GridCoord(16, 5),
+                new GridCoord(16, 6), new GridCoord(16, 8), new GridCoord(17, 3),
+                new GridCoord(17, 4), new GridCoord(17, 5)
+            },
             crawlers: new[] { new GridCoord(2, 2), new GridCoord(2, 11), new GridCoord(4, 2) },
             moths: new[] { new GridCoord(1, 1), new GridCoord(1, 6) },
             flasks: new[] { new GridCoord(5, 10), new GridCoord(9, 7), new GridCoord(13, 4) },
@@ -91,7 +132,20 @@ public sealed class LevelLoader
                 }),
             requiresLampPlacement: true);
         yield return CreateLevel(
-            5, 14, new GridCoord(2, 2), new[] { new GridCoord(16, 10), new GridCoord(8, 1), new GridCoord(1, 8) },
+            5, 14, new GridCoord(2, 2), new GridCoord(16, 10), new[]
+            {
+                new GridCoord(12, 2), new GridCoord(12, 3), new GridCoord(12, 4),
+                new GridCoord(12, 5), new GridCoord(12, 7), new GridCoord(12, 8),
+                new GridCoord(12, 9), new GridCoord(12, 10), new GridCoord(13, 1),
+                new GridCoord(13, 2), new GridCoord(13, 3), new GridCoord(13, 4),
+                new GridCoord(13, 5), new GridCoord(13, 7), new GridCoord(13, 8),
+                new GridCoord(13, 9), new GridCoord(14, 10), new GridCoord(15, 5),
+                new GridCoord(15, 6), new GridCoord(15, 7), new GridCoord(15, 8),
+                new GridCoord(15, 9), new GridCoord(15, 10), new GridCoord(15, 11),
+                new GridCoord(16, 6), new GridCoord(16, 7), new GridCoord(16, 8),
+                new GridCoord(16, 9), new GridCoord(16, 10), new GridCoord(17, 7),
+                new GridCoord(17, 8), new GridCoord(17, 9)
+            },
             crawlers: new[] { new GridCoord(2, 10), new GridCoord(2, 11), new GridCoord(4, 10) },
             moths: new[] { new GridCoord(1, 11), new GridCoord(1, 7) },
             flasks: new[] { new GridCoord(5, 3), new GridCoord(10, 6), new GridCoord(14, 8) },
@@ -107,7 +161,22 @@ public sealed class LevelLoader
                 }),
             requiresLampPlacement: true);
         yield return CreateLevel(
-            6, 16, new GridCoord(2, 10), new[] { new GridCoord(16, 2), new GridCoord(1, 4), new GridCoord(8, 11) },
+            6, 16, new GridCoord(2, 10), new GridCoord(16, 2), new[]
+            {
+                new GridCoord(12, 2), new GridCoord(12, 3), new GridCoord(12, 4),
+                new GridCoord(12, 5), new GridCoord(12, 6), new GridCoord(12, 7),
+                new GridCoord(12, 8), new GridCoord(12, 9), new GridCoord(12, 10),
+                new GridCoord(12, 11), new GridCoord(13, 1), new GridCoord(13, 2),
+                new GridCoord(13, 8), new GridCoord(13, 9), new GridCoord(13, 10),
+                new GridCoord(13, 11), new GridCoord(14, 2), new GridCoord(14, 3),
+                new GridCoord(14, 4), new GridCoord(14, 5), new GridCoord(14, 6),
+                new GridCoord(14, 8), new GridCoord(15, 1), new GridCoord(15, 2),
+                new GridCoord(15, 3), new GridCoord(15, 4), new GridCoord(15, 5),
+                new GridCoord(15, 6), new GridCoord(16, 2), new GridCoord(16, 3),
+                new GridCoord(16, 4), new GridCoord(16, 5), new GridCoord(16, 6),
+                new GridCoord(17, 1), new GridCoord(17, 2), new GridCoord(17, 3),
+                new GridCoord(17, 4), new GridCoord(17, 5), new GridCoord(17, 7)
+            },
             crawlers: new[] { new GridCoord(2, 2), new GridCoord(4, 2), new GridCoord(6, 2), new GridCoord(17, 11) },
             moths: new[] { new GridCoord(1, 1), new GridCoord(15, 11), new GridCoord(17, 6) },
             flasks: new[] { new GridCoord(5, 9), new GridCoord(8, 7), new GridCoord(13, 4) },
@@ -124,7 +193,24 @@ public sealed class LevelLoader
                 }),
             requiresLampPlacement: true);
         yield return CreateLevel(
-            7, 16, new GridCoord(2, 6), new[] { new GridCoord(16, 6), new GridCoord(6, 1), new GridCoord(6, 11) },
+            7, 16, new GridCoord(2, 6), new GridCoord(16, 6), new[]
+            {
+                new GridCoord(12, 2), new GridCoord(12, 3), new GridCoord(12, 5),
+                new GridCoord(12, 6), new GridCoord(12, 7), new GridCoord(12, 8),
+                new GridCoord(12, 10), new GridCoord(12, 11), new GridCoord(13, 1),
+                new GridCoord(13, 2), new GridCoord(13, 6), new GridCoord(13, 11),
+                new GridCoord(14, 2), new GridCoord(14, 3), new GridCoord(14, 4),
+                new GridCoord(14, 5), new GridCoord(14, 6), new GridCoord(14, 7),
+                new GridCoord(14, 8), new GridCoord(14, 9), new GridCoord(14, 10),
+                new GridCoord(15, 1), new GridCoord(15, 2), new GridCoord(15, 3),
+                new GridCoord(15, 4), new GridCoord(15, 5), new GridCoord(15, 6),
+                new GridCoord(15, 7), new GridCoord(15, 9), new GridCoord(15, 10),
+                new GridCoord(15, 11), new GridCoord(16, 2), new GridCoord(16, 3),
+                new GridCoord(16, 4), new GridCoord(16, 6), new GridCoord(16, 7),
+                new GridCoord(16, 8), new GridCoord(16, 9), new GridCoord(16, 10),
+                new GridCoord(17, 1), new GridCoord(17, 2), new GridCoord(17, 3),
+                new GridCoord(17, 7), new GridCoord(17, 8), new GridCoord(17, 9)
+            },
             crawlers: new[] { new GridCoord(2, 2), new GridCoord(2, 10), new GridCoord(4, 2), new GridCoord(4, 10) },
             moths: new[] { new GridCoord(1, 1), new GridCoord(1, 11), new GridCoord(17, 11) },
             flasks: new[] { new GridCoord(6, 5), new GridCoord(8, 8), new GridCoord(12, 4), new GridCoord(15, 8) },
@@ -147,6 +233,7 @@ public sealed class LevelLoader
         int index,
         int startingWick,
         GridCoord playerStart,
+        GridCoord defaultStair,
         GridCoord[] stairCandidates,
         GridCoord[] crawlers,
         GridCoord[] moths,
@@ -154,9 +241,27 @@ public sealed class LevelLoader
         GridCoord[] interiorWalls,
         bool requiresLampPlacement = false)
     {
-        if (stairCandidates is null || stairCandidates.Length != 3 || stairCandidates.Distinct().Count() != 3)
+        ArgumentNullException.ThrowIfNull(stairCandidates);
+        var firstRightColumn = (LevelTuning.GridWidth * 2) / 3;
+        if (stairCandidates.Length < 2 || stairCandidates.Distinct().Count() != stairCandidates.Length)
         {
-            throw new ArgumentException("Campaign levels require exactly three distinct stair candidates.", nameof(stairCandidates));
+            throw new ArgumentException("Campaign levels require at least two distinct stair candidates.", nameof(stairCandidates));
+        }
+
+        if (stairCandidates.Any(candidate =>
+                candidate.X < firstRightColumn ||
+                candidate.X >= LevelTuning.GridWidth - 1))
+        {
+            throw new ArgumentException(
+                $"Campaign stair candidates must be in playable right-side columns {firstRightColumn}-{LevelTuning.GridWidth - 2}.",
+                nameof(stairCandidates));
+        }
+
+        if (!stairCandidates.Contains(defaultStair))
+        {
+            throw new ArgumentException(
+                $"Level {index} default stair {defaultStair} must belong to its candidate pool.",
+                nameof(defaultStair));
         }
 
         var targetMin = index <= 3 ? 2 : 3;
@@ -167,7 +272,7 @@ public sealed class LevelLoader
             StartingWick = startingWick,
             PlayerStart = playerStart,
             LampStart = playerStart,
-            StairCell = stairCandidates[0],
+            StairCell = defaultStair,
             StairCandidates = [.. stairCandidates],
             Walls = Combine(CreateBoundaryWalls(), interiorWalls),
             Crawlers = crawlers,

@@ -45,17 +45,43 @@ public sealed class LevelSolvabilityTests
         Assert.Equal(13, level.Height);
         Assert.True(board.IsWalkable(level.PlayerStart));
         Assert.True(board.IsWalkable(level.LampStart));
-        Assert.Equal(3, level.StairCandidates.Length);
-        Assert.Equal(3, level.StairCandidates.Distinct().Count());
-        Assert.Equal(level.StairCandidates[0], level.StairCell);
+        var expectedPoolSizes = new[] { 8, 21, 23, 44, 32, 39, 45 };
+        var firstRightColumn = (level.Width * 2) / 3;
+
+        Assert.Equal(expectedPoolSizes[levelIndex - 1], level.StairCandidates.Length);
+        Assert.Equal(level.StairCandidates.Length, level.StairCandidates.Distinct().Count());
+        Assert.Contains(level.StairCell, level.StairCandidates);
         Assert.All(level.StairCandidates, candidate =>
         {
+            Assert.InRange(candidate.X, firstRightColumn, level.Width - 2);
             Assert.True(board.IsWalkable(candidate));
             Assert.NotNull(FindShortestPath(board, level.PlayerStart, candidate));
         });
+        Assert.Equal(
+            level.StairCandidates.OrderBy(candidate => candidate.X).ThenBy(candidate => candidate.Y),
+            level.StairCandidates);
         Assert.All(level.Crawlers, cell => Assert.True(board.IsWalkable(cell)));
         Assert.All(level.Moths, cell => Assert.True(board.IsWalkable(cell)));
         Assert.All(level.Flasks, cell => Assert.True(board.IsWalkable(cell)));
+    }
+
+    [Fact]
+    public void Campaign_RetainsOriginalStairsInsideExpandedPools()
+    {
+        var expected = new[]
+        {
+            new GridCoord(14, 9),
+            new GridCoord(14, 3),
+            new GridCoord(16, 6),
+            new GridCoord(16, 2),
+            new GridCoord(16, 10),
+            new GridCoord(16, 2),
+            new GridCoord(16, 6)
+        };
+        var levels = new LevelLoader().LoadCampaign();
+
+        Assert.Equal(expected, levels.Select(level => level.StairCell));
+        Assert.All(levels, level => Assert.Contains(level.StairCell, level.StairCandidates));
     }
 
     [Theory]
