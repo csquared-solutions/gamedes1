@@ -10,6 +10,7 @@ public sealed class LevelDefinition
     public GridCoord PlayerStart { get; init; }
     public GridCoord LampStart { get; init; }
     public GridCoord StairCell { get; init; }
+    public GridCoord[] StairCandidates { get; init; } = Array.Empty<GridCoord>();
     public GridCoord[] Walls { get; init; } = Array.Empty<GridCoord>();
     public GridCoord[] Crawlers { get; init; } = Array.Empty<GridCoord>();
     public GridCoord[] Moths { get; init; } = Array.Empty<GridCoord>();
@@ -19,4 +20,21 @@ public sealed class LevelDefinition
     public int TargetCompletionWickMax { get; init; }
     public int Width => LevelTuning.GridWidth;
     public int Height => LevelTuning.GridHeight;
+
+    public LevelDefinition WithStairCell(GridCoord stairCell) => new()
+    {
+        Index = Index,
+        StartingWick = StartingWick,
+        PlayerStart = PlayerStart,
+        LampStart = LampStart,
+        StairCell = stairCell,
+        StairCandidates = [.. StairCandidates],
+        Walls = [.. Walls],
+        Crawlers = [.. Crawlers],
+        Moths = [.. Moths],
+        Flasks = [.. Flasks],
+        RequiresLampPlacement = RequiresLampPlacement,
+        TargetCompletionWickMin = TargetCompletionWickMin,
+        TargetCompletionWickMax = TargetCompletionWickMax
+    };
 }
