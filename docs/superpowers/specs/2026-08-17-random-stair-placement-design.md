@@ -1,51 +1,54 @@
-# Random Stair Placement Design
+# Right-Side Random Stair Placement Design
 
 ## Status
 
-Approved on 2026-08-17.
+Revised design approved on 2026-08-17.
 
 ## Context
 
-Wick currently gives each of its seven authored campaign levels one fixed stair cell. The player has requested that the stair move between attempts to add route variety. This amendment replaces the fixed exit with a small authored pool while retaining the campaign's existing geometry, hazard rules, flask economy, lamp-placement requirement, and wick targets.
+Wick has seven authored campaign levels and currently selects each attempt's stair from three validated cells. Playtesting showed that the retry movement is effective, but the small pools remain predictable. This revision broadens each pool to every validated floor cell in the rightmost third of the map while retaining the existing geometry, hazard rules, flask economy, lamp-placement requirement, and wick targets.
 
-The change intentionally does not select from every open floor tile. Unrestricted placement could create trivial exits, unreachable exits, unintended overlaps, or routes that invalidate the authored resource balance.
+The board is 18 columns wide with zero-based coordinates. The rightmost third is therefore columns 12 through 17, expressed by the general rule `cell.X >= (level.Width * 2) / 3`.
 
 ## Goals
 
-- Give every level exactly three authored and validated stair candidates.
+- Build each level's stair pool from safe, reachable floor cells in the rightmost third of its map.
 - Select a stair position when each level attempt begins.
 - Guarantee that a retry uses a different stair cell from the immediately previous attempt on that level.
+- Preserve the original authored stair as an eligible location when it satisfies the right-side safety rules.
 - Preserve the seven-level authored progression and all existing game rules.
 - Keep stair visibility, entry, lamp-placement, HUD, restart, and progression behavior synchronized with the selected cell.
 
 ## Non-Goals
 
-- Procedurally generating level geometry.
+- Procedurally generating or changing level geometry.
 - Randomizing the player, lamp, flask, crawler, or moth starts.
 - Changing wick values, flask restoration, hazard movement, or level-clear rules.
+- Placing stairs outside the rightmost third.
 - Moving the stair during an active attempt.
 - Rerolling the stair when Practice Mode Undo restores an action.
 
-## Authored Level Data
+## Candidate Generation
 
-`LevelDefinition` will expose `StairCandidates`, containing exactly three distinct cells. The existing authored stair cell remains one candidate so the original route is retained as one possible attempt.
+A focused candidate builder derives `StairCandidates` from immutable authored level data. It enumerates the rightmost third in a stable order and includes a cell only when it:
 
-Each candidate must:
+- is inside the board and in columns 12 through 17;
+- is a walkable floor cell connected to the player's playable area;
+- differs from the player and lamp start;
+- does not overlap a wall, flask, crawler, or moth; and
+- is not in the level's authored `StairExclusions`.
 
-- be a walkable floor cell connected to the player's playable area;
-- differ from the player and lamp start;
-- not overlap a flask, crawler, moth, or another stair candidate;
-- preserve a winning route within the level's wick completion band;
-- preserve required lamp-placement behavior on levels three through seven;
-- remain viable for both supported crawler tie-break seeds.
+Every cell that passes these structural rules belongs to the runtime pool. There is no three-candidate cap. `StairExclusions` may contain only right-side cells proven unsafe by the full wick, lamp, route, or hazard simulations; it is not used to impose a small arbitrary pool. Campaign construction rejects duplicate or out-of-region exclusions and rejects a level with fewer than two candidates because that level could not guarantee movement on retry.
 
-The authored definition remains immutable. A helper creates an active level definition with the selected `StairCell` while retaining the complete candidate pool and all other authored values.
+The original fixed stair for each level remains the authored/default `StairCell` and must appear in the generated pool. This retains the original route as one possible attempt and provides a stable default for simulations that do not request random selection.
+
+The authored definition remains immutable. `WithStairCell` creates an active level definition with the selected cell while defensively copying the complete candidate pool and all other authored arrays.
 
 ## Selection Rules
 
-A focused `StairPlacementSelector` owns stair selection. It receives a random source so deterministic seeds can be used in tests and normal randomness can be used during play.
+`StairPlacementSelector` owns runtime selection. It receives a random source so deterministic seeds can be used in tests and normal randomness can be used during play.
 
-For each level, the selector remembers the stair used by the previous attempt. When another attempt begins, it selects uniformly from the other two candidates. Therefore a death, automatic retry, or manual `R` restart always visibly moves the stair rather than merely having a chance to move it.
+For each level, the selector remembers the stair used by the previous attempt. When another attempt begins, it selects uniformly from every candidate except that previous cell. A death, automatic retry, or manual `R` restart therefore always visibly moves the stair rather than merely having a chance to move it.
 
 The selector runs when:
 
@@ -55,43 +58,53 @@ The selector runs when:
 - a level is loaded as a new Practice Mode attempt;
 - a new campaign run loads a level again.
 
-The selector does not run for `Z` Undo because Undo remains inside the same attempt. The active stair does not need to be added to action snapshots because it cannot change until a full level reload.
+Same-level `Z` Undo restores gameplay in place and does not run the selector. When Undo crosses a completed-level boundary, `LevelManager` restores that level's cached active definition so the exact previous stair is retained.
 
 ## Runtime Flow
 
-`LevelManager.LoadActiveLevel` will load the authored definition, request a candidate from `StairPlacementSelector`, and create the active definition before initializing gameplay systems. The existing systems then continue to consume `_currentLevel.StairCell`:
+`LevelLoader` creates the immutable authored level and its complete right-side candidate pool. `LevelManager.LoadActiveLevel` asks `StairPlacementSelector` for an active definition before initializing gameplay systems. Existing systems continue to consume `_currentLevel.StairCell`:
 
 1. `StairController` places and reveals the stair at the active cell.
 2. `StairEntryRule` checks the same active cell and the existing carried-lamp restriction.
 3. HUD exit-blocked messaging evaluates the same active definition.
 4. Campaign completion records the existing remaining-wick result.
-5. Restart creates a new active definition with a different selected cell.
+5. A genuine restart creates a new active definition with a different selected cell.
 
 No visual teleport occurs during play. A newly selected stair first appears only when the retried level is loaded and the cell enters sight, preserving the existing darkness and discovery rules.
 
 ## Fairness And Failure Handling
 
-Candidate validation is a build-time responsibility. Invalid candidate data fails automated tests rather than silently falling back to arbitrary floor cells at runtime.
+Candidate generation is deterministic; randomization selects only from the generated result. Invalid campaign data fails construction or automated tests rather than silently falling back to arbitrary floor cells.
 
-The selector rejects a level with fewer than two usable candidates because it could not guarantee movement on retry. Campaign data has a stronger contract of exactly three candidates. Duplicate candidates are invalid. Selection never loops while searching for a different value; it filters out the previous cell and chooses directly from the remaining candidates.
+Duplicate candidates are invalid. Selection never loops while searching for a different value; it filters out the previous cell and chooses directly from the remaining pool.
+
+The full safety suite remains the release gate. If a generated right-side cell fails route, wick, lamp, overlap, or supported hazard-seed validation, the level cannot ship until its geometry is corrected or that cell is explicitly documented in `StairExclusions`. Test performance may be improved through harness optimization or safe parallel execution, but coverage must not be reduced by sampling random candidates.
 
 ## Testing
 
-Unit tests will prove that the selector:
+Candidate-builder tests will prove that every generated cell:
 
-- chooses only declared candidates;
+- lies in the rightmost third;
+- is a distinct, walkable, reachable floor cell;
+- does not overlap starts, walls, flasks, crawlers, or moths;
+- includes the original authored stair;
+- honors only distinct, in-region authored exclusions; and
+- is generated deterministically from the same level data.
+
+Selector tests will prove that selection:
+
+- chooses only generated candidates;
 - never repeats the immediately previous stair on a retry;
 - remains deterministic when supplied a seeded random source;
+- works with candidate pools larger than three;
 - does not mutate the authored level definition.
 
-Campaign-data tests will validate all 21 candidate cells for topology, reachability, and object overlap. Hazard-aware campaign simulations will solve every candidate with both crawler tie-break seeds and verify the existing completion-wick bands and lamp-placement requirements.
-
-Runtime contract tests will verify that loading and restarting use the selected active cell, while Undo retains the current cell. Existing stair visibility, HUD, campaign progression, packaging, and seven-level tests remain in the regression suite.
+Campaign simulations will solve every generated candidate with both crawler tie-break seeds and verify the existing completion-wick bands and lamp-placement requirements. Runtime checks will verify that loading and restarting use the selected active cell, while same-level and cross-level Undo retain the current cell. Existing stair visibility, HUD, campaign progression, packaging, and seven-level tests remain in the regression suite.
 
 ## GDD Alignment Amendment
 
-This approved change replaces the previous `fixed stair exit` requirement with:
+This approved playtest revision replaces the previous `three authored exits` amendment with:
 
-> Each of the seven authored levels provides three authored, validated stair exits. One exit is selected per attempt, and a retry must select a different exit from the previous attempt. Stair position remains fixed during the attempt and is not changed by Undo.
+> Each of the seven authored levels generates a pool from all validated, reachable stair locations in the rightmost third of the map. One location is selected per attempt, and a retry must select a different location from the previous attempt. The stair remains fixed during the attempt and is not changed by Undo.
 
-This is a controlled post-playtest expansion. It preserves authored level design and deterministic player-facing rules while adding replay variety requested during hands-on review.
+This remains a controlled expansion of the original fixed-exit requirement. It adds greater route variety without changing authored layouts, resource rules, hazards, darkness, lamp handling, or campaign progression.
