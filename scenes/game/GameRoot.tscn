@@ -17,6 +17,7 @@
 [ext_resource type="Script" path="res://scripts/audio/AudioCueController.cs" id="16_audio_cues"]
 [ext_resource type="AudioStream" path="res://assets/audio/moth-wake.wav" id="17_moth_wake"]
 [ext_resource type="AudioStream" path="res://assets/audio/low-wick-gutter.wav" id="18_low_wick"]
+[ext_resource type="AudioStream" path="res://assets/audio/basement-ambience.wav" id="19_ambience"]
 
 [node name="GameRoot" type="Node"]
 
@@ -61,6 +62,11 @@ volume_db = -7.0
 [node name="LowWickCue" type="AudioStreamPlayer" parent="AudioCues"]
 stream = ExtResource("18_low_wick")
 volume_db = -9.0
+
+[node name="BasementAmbience" type="AudioStreamPlayer" parent="AudioCues"]
+stream = ExtResource("19_ambience")
+volume_db = -24.0
+autoplay = true
 
 [node name="LevelManager" type="Node" parent="."]
 script = ExtResource("6_level_manager")

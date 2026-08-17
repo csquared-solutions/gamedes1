@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Wick.Board;
 using Wick.Core;
 
@@ -17,20 +19,71 @@ public static class HazardReadability
         visibility.IsVisible(hazardCell);
 }
 
+public sealed class HazardPathTieBreaker
+{
+    private const uint FallbackSeed = 0x6D2B79F5;
+    private uint _seed;
+
+    public HazardPathTieBreaker(uint seed = FallbackSeed)
+    {
+        _seed = seed == 0 ? FallbackSeed : seed;
+    }
+
+    public int ChooseIndex(int optionCount, GridCoord origin, GridCoord target)
+    {
+        if (optionCount <= 1)
+        {
+            return 0;
+        }
+
+        var hash = _seed;
+        hash ^= unchecked((uint)(origin.X * 73_856_093));
+        hash ^= unchecked((uint)(origin.Y * 19_349_663));
+        hash ^= unchecked((uint)(target.X * 83_492_791));
+        hash ^= unchecked((uint)(target.Y * 2_654_435_761));
+        hash ^= hash >> 16;
+        hash *= 0x7FEB352D;
+        hash ^= hash >> 15;
+        hash *= 0x846CA68B;
+        hash ^= hash >> 16;
+        return (int)(hash % (uint)optionCount);
+    }
+
+    public uint CaptureState() => _seed;
+
+    public void RestoreState(uint state) => _seed = state == 0 ? FallbackSeed : state;
+}
+
 public sealed class HazardContext
 {
-    public HazardContext(BoardState board, VisibilitySystem visibility, GridCoord lampCell, int lampRadius)
+    public HazardContext(
+        BoardState board,
+        VisibilitySystem visibility,
+        GridCoord lampCell,
+        int lampRadius)
+        : this(board, visibility, lampCell, lampRadius, new HazardPathTieBreaker())
+    {
+    }
+
+    public HazardContext(
+        BoardState board,
+        VisibilitySystem visibility,
+        GridCoord lampCell,
+        int lampRadius,
+        HazardPathTieBreaker tieBreaker)
     {
         Board = board;
         Visibility = visibility;
         LampCell = lampCell;
         LampRadius = lampRadius;
+        TieBreaker = tieBreaker;
     }
 
     public BoardState Board { get; }
     public VisibilitySystem Visibility { get; }
     public GridCoord LampCell { get; }
     public int LampRadius { get; }
+    public HazardPathTieBreaker TieBreaker { get; }
 
     public bool IsLit(GridCoord cell) => Visibility.IsVisible(cell);
 }
@@ -55,7 +108,7 @@ public abstract class HazardBase
 
     public abstract GridCoord TakeTurn(HazardContext context);
 
-    protected GridCoord FindNextStep(HazardContext context)
+    protected GridCoord FindNextStep(HazardContext context, bool randomizeTies = true)
     {
         if (Cell == context.LampCell)
         {
@@ -64,48 +117,50 @@ public abstract class HazardBase
         }
 
         var frontier = new Queue<GridCoord>();
-        var visited = new HashSet<GridCoord> { Cell };
-        var previous = new Dictionary<GridCoord, GridCoord>();
-        frontier.Enqueue(Cell);
+        var distances = new Dictionary<GridCoord, int> { [context.LampCell] = 0 };
+        frontier.Enqueue(context.LampCell);
 
         while (frontier.Count > 0)
         {
             var current = frontier.Dequeue();
-            if (current == context.LampCell)
-            {
-                break;
-            }
-
             foreach (var direction in NeighborOrder)
             {
                 var next = current + direction;
-                if (!context.Board.IsWalkable(next) || !visited.Add(next))
+                if (!context.Board.IsWalkable(next) || distances.ContainsKey(next))
                 {
                     continue;
                 }
 
-                previous[next] = current;
+                distances[next] = distances[current] + 1;
                 frontier.Enqueue(next);
             }
         }
 
-        if (!visited.Contains(context.LampCell))
+        if (!distances.TryGetValue(Cell, out var currentDistance))
         {
             return Cell;
         }
 
-        var step = context.LampCell;
-        while (previous[step] != Cell)
+        var candidates = NeighborOrder
+            .Select(direction => Cell + direction)
+            .Where(next => distances.TryGetValue(next, out var distance) && distance == currentDistance - 1)
+            .ToArray();
+        if (candidates.Length == 0)
         {
-            step = previous[step];
+            return Cell;
         }
 
-        return step;
+        var optionCount = Math.Min(candidates.Length, 2);
+        var canRandomize = randomizeTies && candidates.Take(optionCount).All(next => !context.IsLit(next));
+        var selectedIndex = canRandomize
+            ? context.TieBreaker.ChooseIndex(optionCount, Cell, context.LampCell)
+            : 0;
+        return candidates[selectedIndex];
     }
 
-    protected GridCoord MoveTowardLamp(HazardContext context)
+    protected GridCoord MoveTowardLamp(HazardContext context, bool randomizeTies = true)
     {
-        Cell = FindNextStep(context);
+        Cell = FindNextStep(context, randomizeTies);
         HasReachedLamp = Cell == context.LampCell;
         return Cell;
     }

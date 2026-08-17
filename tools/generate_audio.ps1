@@ -65,3 +65,31 @@ for ($index = 0; $index -lt $gutter.Length; $index++) {
 
 Write-MonoWave -Path (Join-Path $OutputRoot 'moth-wake.wav') -Samples $moth
 Write-MonoWave -Path (Join-Path $OutputRoot 'low-wick-gutter.wav') -Samples $gutter
+
+$ambienceDuration = 24.0
+$ambience = [double[]]::new([int]($sampleRate * $ambienceDuration))
+$droneFrequencies = @(42.6666666667, 64.0, 85.3333333333, 213.3333333333)
+for ($index = 0; $index -lt $ambience.Length; $index++) {
+    $time = $index / $sampleRate
+    $slowBreath = 0.78 + 0.22 * [Math]::Sin($twoPi * $time / 12.0)
+    $airMovement = 0.74 + 0.26 * [Math]::Sin($twoPi * $time / 8.0 + 1.1)
+    $sample = 0.055 * $slowBreath * [Math]::Sin($twoPi * $droneFrequencies[0] * $time)
+    $sample += 0.031 * [Math]::Sin($twoPi * $droneFrequencies[1] * $time + 0.7)
+    $sample += 0.018 * [Math]::Sin($twoPi * $droneFrequencies[2] * $time + 1.8)
+    $sample += 0.006 * $airMovement * [Math]::Sin($twoPi * $droneFrequencies[3] * $time)
+
+    foreach ($strike in @(5.0, 12.5, 19.0)) {
+        $age = $time - $strike
+        if ($age -ge 0.0 -and $age -lt 1.8) {
+            $decay = [Math]::Exp(-4.2 * $age)
+            $sample += 0.11 * $decay * (
+                [Math]::Sin($twoPi * 320.0 * $age) +
+                0.46 * [Math]::Sin($twoPi * 476.0 * $age)
+            )
+        }
+    }
+
+    $ambience[$index] = $sample
+}
+
+Write-MonoWave -Path (Join-Path $OutputRoot 'basement-ambience.wav') -Samples $ambience

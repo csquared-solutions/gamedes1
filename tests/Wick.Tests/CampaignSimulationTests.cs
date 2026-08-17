@@ -32,6 +32,22 @@ public sealed class CampaignSimulationTests
         }
     }
 
+    [Theory]
+    [InlineData(1u)]
+    [InlineData(2u)]
+    public void Campaign_BothRandomTieBreakOutcomesPreserveWinningRoutes(uint tieBreakerSeed)
+    {
+        foreach (var level in new LevelLoader().LoadCampaign())
+        {
+            var result = CampaignSimulationHarness.FindWinningPlan(
+                level,
+                new SimulationRequirements(RequireFlare: level.Index == 1),
+                tieBreakerSeed: tieBreakerSeed);
+
+            Assert.True(result.Won, $"Seed {tieBreakerSeed}: {result.Summary}");
+        }
+    }
+
     [Fact]
     public void LevelOne_HasAWinningTeachingRouteForFlareStallAndForcedDarkFlaskLift()
     {

@@ -38,10 +38,14 @@ The playable prototype must prove five things:
   - wick depletes to zero
   - hazard reaches and smothers the lamp
 - Win state: player reaches the stair tile
-- Audio scope: minimal, two cues is enough for prototype
+- Audio scope: two gameplay cues plus one quiet looping ambience; the ambience is an approved post-playtest expansion and has no gameplay effect
 - Menus: minimal start/restart flow only
 
 ## Core Systems
+
+### Post-Playtest Revision
+
+The first hands-on review found that sealed hazard pockets made the campaign too passive. Hazard starts remain authored and path length remains optimal, but equal-cost route choices now use the GDD's permitted seeded tie-break randomness. Every crawler, moth, flask, and stair must connect to the playable floor area, and late-game flask reviews intentionally include unsafe take-all routes so refuelling remains a decision rather than a collection task.
 
 ## 1. Turn System
 

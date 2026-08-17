@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
@@ -41,7 +42,8 @@ public partial class HazardSystem : Node
         _lamp = lamp;
         _wick = wick;
         _events = events;
-        State = new HazardSimulationState(board, crawlerStarts, mothStarts);
+        var tieBreakerSeed = unchecked((uint)Random.Shared.Next(1, 3));
+        State = new HazardSimulationState(board, crawlerStarts, mothStarts, tieBreakerSeed);
         RebuildMarkers(_crawlerMarkers, crawlerMarker, State.CrawlerCells.Count);
         RebuildMarkers(_mothMarkers, mothMarker, State.MothCells.Count);
         SyncMarkers();

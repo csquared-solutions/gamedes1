@@ -11,13 +11,19 @@ public sealed class HazardSimulationState
     private readonly BoardState _board;
     private readonly CrawlerController[] _crawlers;
     private readonly MothController[] _moths;
+    private readonly HazardPathTieBreaker _tieBreaker;
     private HazardMotionState[] _crawlerMotion;
     private HazardMotionState[] _mothMotion;
     private bool _smothered;
 
-    public HazardSimulationState(BoardState board, IEnumerable<GridCoord> crawlerStarts, IEnumerable<GridCoord> mothStarts)
+    public HazardSimulationState(
+        BoardState board,
+        IEnumerable<GridCoord> crawlerStarts,
+        IEnumerable<GridCoord> mothStarts,
+        uint tieBreakerSeed = 1)
     {
         _board = board ?? throw new ArgumentNullException(nameof(board));
+        _tieBreaker = new HazardPathTieBreaker(tieBreakerSeed);
         _crawlers = crawlerStarts.Select(cell => new CrawlerController(cell)).ToArray();
         _moths = mothStarts.Select(cell => new MothController(cell)).ToArray();
         _crawlerMotion = Enumerable.Repeat(HazardMotionState.Stalled, _crawlers.Length).ToArray();
@@ -37,7 +43,7 @@ public sealed class HazardSimulationState
             return false;
         }
 
-        var context = new HazardContext(_board, visibility, lampCell, radius);
+        var context = new HazardContext(_board, visibility, lampCell, radius, _tieBreaker);
         for (var index = 0; index < _crawlers.Length; index++)
         {
             var previous = _crawlers[index].Cell;
@@ -68,6 +74,7 @@ public sealed class HazardSimulationState
         _moths.Select(moth => moth.CaptureSnapshot()).ToArray(),
         _crawlerMotion.ToArray(),
         _mothMotion.ToArray(),
+        _tieBreaker.CaptureState(),
         _smothered);
 
     public void RestoreSnapshot(HazardSimulationSnapshot snapshot)
@@ -89,6 +96,7 @@ public sealed class HazardSimulationState
 
         _crawlerMotion = snapshot.CrawlerMotion.ToArray();
         _mothMotion = snapshot.MothMotion.ToArray();
+        _tieBreaker.RestoreState(snapshot.TieBreakerState);
         _smothered = snapshot.IsSmothered;
     }
 
@@ -103,4 +111,5 @@ public sealed record HazardSimulationSnapshot(
     MothSnapshot[] Moths,
     HazardMotionState[] CrawlerMotion,
     HazardMotionState[] MothMotion,
+    uint TieBreakerState,
     bool IsSmothered);

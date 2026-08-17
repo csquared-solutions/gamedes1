@@ -9,14 +9,17 @@ namespace Wick.Tests;
 public sealed class PresentationContractTests
 {
     [Fact]
-    public void GameRoot_ProvidesOnlyTheTwoAuthoredAudioCuePlayers()
+    public void GameRoot_ProvidesWarningCuesAndQuietLoopingAmbience()
     {
         var scene = GodotTextSceneContract.ParseFile(ProjectFile("scenes", "game", "GameRoot.tscn"));
 
         Assert.Equal("res://scripts/audio/AudioCueController.cs", scene.ResolveNodeResourcePath(scene.RequireNode("AudioCues")));
         Assert.Equal("AudioStreamPlayer", scene.RequireNode("MothWakeCue").Type);
         Assert.Equal("AudioStreamPlayer", scene.RequireNode("LowWickCue").Type);
-        Assert.Equal(2, scene.Nodes.Count(node => node.Type == "AudioStreamPlayer"));
+        var ambience = scene.RequireNode("BasementAmbience");
+        Assert.Equal("AudioStreamPlayer", ambience.Type);
+        Assert.Equal("true", ambience.Properties["autoplay"]);
+        Assert.Equal(3, scene.Nodes.Count(node => node.Type == "AudioStreamPlayer"));
     }
 
     [Fact]
@@ -74,6 +77,9 @@ public sealed class PresentationContractTests
         Assert.True(File.Exists(ProjectFile("assets", "art", "wick-mark.svg")));
         Assert.True(File.Exists(ProjectFile("assets", "audio", "moth-wake.wav")));
         Assert.True(File.Exists(ProjectFile("assets", "audio", "low-wick-gutter.wav")));
+        Assert.True(File.Exists(ProjectFile("assets", "audio", "basement-ambience.wav")));
+        var ambienceImport = File.ReadAllText(ProjectFile("assets", "audio", "basement-ambience.wav.import"));
+        Assert.Contains("edit/loop_mode=1", ambienceImport, StringComparison.Ordinal);
         Assert.True(File.Exists(ProjectFile("assets", "fonts", "AtkinsonHyperlegible-Regular.ttf")));
 
         var attribution = File.ReadAllText(ProjectFile("docs", "attribution.md"));
@@ -81,6 +87,7 @@ public sealed class PresentationContractTests
         Assert.Contains("SIL Open Font License 1.1", attribution, StringComparison.Ordinal);
         Assert.Contains("moth-wake.wav", attribution, StringComparison.Ordinal);
         Assert.Contains("low-wick-gutter.wav", attribution, StringComparison.Ordinal);
+        Assert.Contains("basement-ambience.wav", attribution, StringComparison.Ordinal);
     }
 
     private static string ProjectFile(params string[] relativePath)

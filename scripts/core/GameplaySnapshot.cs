@@ -24,7 +24,7 @@ public sealed record GameplaySnapshot(
         new LampSnapshot(default, true),
         new WickSnapshot(0, 0, false),
         0,
-        new HazardSimulationSnapshot([], [], [], [], false),
+        new HazardSimulationSnapshot([], [], [], [], 1, false),
         new OilFlaskCollectionSnapshot([]),
         new VisibilitySnapshot([], []),
         false,

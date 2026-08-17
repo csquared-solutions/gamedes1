@@ -4,3 +4,4 @@
 *.cs.uid
 **/bin/
 **/obj/
+**/TestResults/

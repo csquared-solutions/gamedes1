@@ -91,14 +91,67 @@ public sealed class HazardSystemTests
     }
 
     [Fact]
-    public void Hazard_UsesDownBeforeRight_ForEqualCostPathChoices()
+    public void Hazard_UsesSeededRandomTieBreak_ForEqualCostPathChoices()
     {
-        var crawler = new CrawlerController(new GridCoord(1, 1));
-        var context = CreateContext(lampCell: new GridCoord(3, 3), radius: 0);
+        var first = new CrawlerController(new GridCoord(1, 1));
+        var second = new CrawlerController(new GridCoord(1, 1));
+        var firstContext = CreateContext(
+            lampCell: new GridCoord(3, 3),
+            radius: 0,
+            tieBreaker: new HazardPathTieBreaker(seed: 1));
+        var secondContext = CreateContext(
+            lampCell: new GridCoord(3, 3),
+            radius: 0,
+            tieBreaker: new HazardPathTieBreaker(seed: 2));
 
-        crawler.TakeTurn(context);
+        first.TakeTurn(firstContext);
+        second.TakeTurn(secondContext);
 
-        Assert.Equal(new GridCoord(1, 2), crawler.Cell);
+        Assert.NotEqual(first.Cell, second.Cell);
+        Assert.Contains(first.Cell, new[] { new GridCoord(1, 2), new GridCoord(2, 1) });
+        Assert.Contains(second.Cell, new[] { new GridCoord(1, 2), new GridCoord(2, 1) });
+    }
+
+    [Fact]
+    public void Moth_UsesStablePathingAcrossCrawlerTieBreakSeeds()
+    {
+        var first = new MothController(new GridCoord(1, 1));
+        var second = new MothController(new GridCoord(1, 1));
+        var firstContext = CreateContext(
+            lampCell: new GridCoord(3, 3),
+            radius: 5,
+            tieBreaker: new HazardPathTieBreaker(seed: 1));
+        var secondContext = CreateContext(
+            lampCell: new GridCoord(3, 3),
+            radius: 5,
+            tieBreaker: new HazardPathTieBreaker(seed: 2));
+
+        first.TakeTurn(firstContext);
+        second.TakeTurn(secondContext);
+
+        Assert.Equal(first.Cell, second.Cell);
+    }
+
+    [Fact]
+    public void HazardSimulation_RestoreSnapshot_ReplaysTheSameTieBreak()
+    {
+        var board = new BoardState(7, 7);
+        var visibility = new VisibilitySystem(board);
+        var lampCell = new GridCoord(5, 5);
+        visibility.Recompute(lampCell, radius: 0);
+        var hazards = new HazardSimulationState(
+            board,
+            new[] { new GridCoord(1, 1) },
+            Array.Empty<GridCoord>(),
+            tieBreakerSeed: 9);
+        var snapshot = hazards.CaptureSnapshot();
+
+        hazards.AdvanceTurn(visibility, lampCell, radius: 0);
+        var firstOutcome = Assert.Single(hazards.CrawlerCells);
+        hazards.RestoreSnapshot(snapshot);
+        hazards.AdvanceTurn(visibility, lampCell, radius: 0);
+
+        Assert.Equal(firstOutcome, Assert.Single(hazards.CrawlerCells));
     }
 
     [Fact]
@@ -130,11 +183,16 @@ public sealed class HazardSystemTests
         Assert.False(hazards.AdvanceTurn(visibility, new GridCoord(2, 1), radius: 0));
     }
 
-    private static HazardContext CreateContext(GridCoord lampCell, int radius)
+    private static HazardContext CreateContext(
+        GridCoord lampCell,
+        int radius,
+        HazardPathTieBreaker? tieBreaker = null)
     {
         var board = new BoardState(19, 13);
         var visibility = new VisibilitySystem(board);
         visibility.Recompute(lampCell, radius);
-        return new HazardContext(board, visibility, lampCell, radius);
+        return tieBreaker is null
+            ? new HazardContext(board, visibility, lampCell, radius)
+            : new HazardContext(board, visibility, lampCell, radius, tieBreaker);
     }
 }

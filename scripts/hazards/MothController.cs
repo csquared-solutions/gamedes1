@@ -17,14 +17,14 @@ public sealed class MothController : HazardBase
             return Cell;
         }
 
-        var nextStep = FindNextStep(context);
+        var nextStep = FindNextStep(context, randomizeTies: false);
         if (nextStep != Cell && !context.IsLit(Cell) && context.IsLit(nextStep) && !_enteredLitSpace)
         {
             _enteredLitSpace = true;
             return Cell;
         }
 
-        return MoveTowardLamp(context);
+        return MoveTowardLamp(context, randomizeTies: false);
     }
 
     public MothSnapshot CaptureSnapshot() => new(Cell, HasReachedLamp, _enteredLitSpace);

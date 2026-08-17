@@ -52,6 +52,49 @@ public sealed class LevelSolvabilityTests
         Assert.NotNull(FindShortestPath(board, level.PlayerStart, level.StairCell));
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    public void Level_AllAuthoredObjectsConnectToThePlayableArea(int levelIndex)
+    {
+        var level = new LevelLoader().Load(levelIndex);
+        var board = new BoardState(level.Width, level.Height, level.Walls);
+        var reachable = FindReachableCells(board, level.PlayerStart);
+        var authoredObjects = level.Crawlers
+            .Concat(level.Moths)
+            .Concat(level.Flasks)
+            .Append(level.StairCell);
+
+        Assert.All(authoredObjects, cell =>
+            Assert.True(reachable.Contains(cell), $"Level {levelIndex} object at {cell} is isolated by walls."));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    public void Level_AuthoredObjectsDoNotOverlapThePlayerOrEachOther(int levelIndex)
+    {
+        var level = new LevelLoader().Load(levelIndex);
+        var occupied = level.Crawlers
+            .Concat(level.Moths)
+            .Concat(level.Flasks)
+            .Append(level.StairCell)
+            .Append(level.PlayerStart)
+            .ToArray();
+
+        Assert.Equal(occupied.Length, occupied.Distinct().Count());
+    }
+
     [Fact]
     public void Campaign_EscalatesHazardsAndRequiresLampPlacementFromLevelThree()
     {

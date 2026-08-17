@@ -62,7 +62,8 @@ internal static class CampaignSimulationHarness
         LevelDefinition level,
         SimulationRequirements requirements,
         int maxActions = 45,
-        int maxStates = 350_000)
+        int maxStates = 350_000,
+        uint tieBreakerSeed = 1)
     {
         SimulationResult? lastFailure = null;
         foreach (var plan in CreateRoutePlans(level, requirements))
@@ -76,7 +77,8 @@ internal static class CampaignSimulationHarness
                     FlaskVisitOrder = plan.Order
                 },
                 GetFiniteActionBound(level, plan.Mask, maxActions),
-                maxStates);
+                maxStates,
+                tieBreakerSeed);
             if (result.Won)
             {
                 return result;
@@ -92,7 +94,8 @@ internal static class CampaignSimulationHarness
         LevelDefinition level,
         SimulationRequirements requirements,
         int maxActions = 45,
-        int maxStatesPerPlan = 20_000) => CreateRoutePlans(level, requirements)
+        int maxStatesPerPlan = 20_000,
+        uint tieBreakerSeed = 1) => CreateRoutePlans(level, requirements)
         .Select(plan => new FlaskRouteReview(
             plan.Mask,
             plan.Order,
@@ -105,20 +108,22 @@ internal static class CampaignSimulationHarness
                     FlaskVisitOrder = plan.Order
                 },
                 GetFiniteActionBound(level, plan.Mask, maxActions),
-                maxStatesPerPlan)))
+                maxStatesPerPlan,
+                tieBreakerSeed)))
         .ToArray();
 
     private static SimulationResult FindWinningPlanForRoute(
         LevelDefinition level,
         SimulationRequirements requirements,
         int maxActions,
-        int maxStates)
+        int maxStates,
+        uint tieBreakerSeed)
     {
         var board = new BoardState(level.Width, level.Height, level.Walls);
         var routeDistances = CreateRouteDistanceMaps(level, board);
         var authoredRouteDistance = GetAuthoredRouteDistance(level, routeDistances);
         var authoredSegments = GetAuthoredRouteSegments(level, routeDistances);
-        var root = CreateRoot(level, board);
+        var root = CreateRoot(level, board, tieBreakerSeed);
         var frontier = new PriorityQueue<SimulationNode, int>();
         var visited = new HashSet<string> { GetKey(root) };
         frontier.Enqueue(root, GetPriority(root, level));
@@ -162,7 +167,7 @@ internal static class CampaignSimulationHarness
                 }
             }
 
-            var shouldPlaceLamp = requirements.AllowLampPlacement && !node.PlacedLamp;
+            var shouldPlaceLamp = requirements.AllowLampPlacement && node.Lamp.IsCarried;
             var placed = shouldPlaceLamp ? TryPlaceLamp(level, board, node, requirements, diagnostics) : null;
             if (placed is not null)
             {
@@ -197,7 +202,7 @@ internal static class CampaignSimulationHarness
             $"invalid {diagnostics.InvalidAction}.");
     }
 
-    private static SimulationNode CreateRoot(LevelDefinition level, BoardState board)
+    private static SimulationNode CreateRoot(LevelDefinition level, BoardState board, uint tieBreakerSeed)
     {
         var wick = new WickState();
         wick.Initialize(level.StartingWick);
@@ -205,7 +210,7 @@ internal static class CampaignSimulationHarness
         var lamp = new LampState(level.LampStart);
         var visibility = new VisibilitySystem(board);
         visibility.Recompute(lamp.Cell, wick.CurrentRadius);
-        var hazards = new HazardSimulationState(board, level.Crawlers, level.Moths);
+        var hazards = new HazardSimulationState(board, level.Crawlers, level.Moths, tieBreakerSeed);
         var flasks = new OilFlaskCollectionState(wick, turns, level.Flasks);
         return new SimulationNode(
             level.PlayerStart,
@@ -606,7 +611,7 @@ internal static class CampaignSimulationHarness
         var flasks = string.Join(',', node.Flasks.Collected.Select(value => value ? '1' : '0'));
         return $"{node.PlayerCell.X},{node.PlayerCell.Y}|{node.Lamp.Cell.X},{node.Lamp.Cell.Y},{node.Lamp.IsCarried}|" +
                $"{node.Wick.CurrentWick},{node.Wick.FlareTurnsRemaining}|{crawlers}|{moths}|{flasks}|" +
-               $"{node.PlacedLamp},{node.FirstLampPlacementAction},{node.FiredFlare},{node.ObservedCrawlerStall},{node.ForcedDarkFlaskTurns}";
+               $"{node.Hazards.TieBreakerState}|{node.PlacedLamp},{node.FirstLampPlacementAction},{node.FiredFlare},{node.ObservedCrawlerStall},{node.ForcedDarkFlaskTurns}";
     }
 
     private static SimulationResult ToResult(SimulationNode node, int explored) => new(

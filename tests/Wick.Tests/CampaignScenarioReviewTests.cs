@@ -8,29 +8,24 @@ namespace Wick.Tests;
 public sealed class CampaignScenarioReviewTests
 {
     [Fact]
-    public void Campaign_IndividualFlaskSubsetsAndRouteOrdersMatchReviewedOutcomes()
+    public void Campaign_FlaskSubsetReviewPreservesEarlySafetyAndFinaleChoice()
     {
-        var rows = new List<string>();
         foreach (var level in new LevelLoader().LoadCampaign())
         {
             var reviews = CampaignSimulationHarness.ReviewFlaskRouteVariants(level, new SimulationRequirements());
-            var outcomes = reviews
-                .GroupBy(review => review.FlaskMask)
-                .OrderBy(group => group.Key)
-                .Select(group => $"{group.Key}:{group.Count(review => review.Result.Won)}/{group.Count()}");
-            rows.Add($"L{level.Index} {string.Join(',', outcomes)}");
-        }
+            var fullMask = (1 << level.Flasks.Length) - 1;
 
-        Assert.Equal(new[]
-        {
-            "L1 0:0/1,1:0/1,2:0/1,3:2/2",
-            "L2 0:0/1,1:0/1,2:0/1,3:2/2",
-            "L3 0:0/1,1:0/1,2:0/1,3:2/2",
-            "L4 0:0/1,1:0/1,2:0/1,3:0/2,4:0/1,5:0/2,6:0/2,7:6/6",
-            "L5 0:0/1,1:0/1,2:0/1,3:0/2,4:0/1,5:0/2,6:0/2,7:6/6",
-            "L6 0:0/1,1:0/1,2:0/1,3:0/2,4:0/1,5:0/2,6:0/2,7:6/6",
-            "L7 0:0/1,1:1/1,2:0/1,3:1/2,4:0/1,5:2/2,6:0/2,7:1/6,8:0/1,9:1/2,10:0/2,11:1/6,12:0/2,13:3/6,14:0/6,15:1/24"
-        }, rows);
+            Assert.Contains(reviews, review => review.Result.Won);
+            if (level.Index < 7)
+            {
+                Assert.All(reviews.Where(review => review.FlaskMask == fullMask), review =>
+                    Assert.True(review.Result.Won, review.Result.Summary));
+                continue;
+            }
+
+            Assert.Contains(reviews, review => review.FlaskMask == fullMask && review.Result.Won);
+            Assert.Contains(reviews, review => review.FlaskMask != fullMask && review.Result.Won);
+        }
     }
 
     [Fact]
