@@ -8,7 +8,7 @@ Revised design approved on 2026-08-17.
 
 Wick has seven authored campaign levels and currently selects each attempt's stair from three validated cells. Playtesting showed that the retry movement is effective, but the small pools remain predictable. This revision broadens each pool to every validated floor cell in the rightmost third of the map while retaining the existing geometry, hazard rules, flask economy, lamp-placement requirement, and wick targets.
 
-The board is 18 columns wide with zero-based coordinates. The rightmost third is therefore columns 12 through 17, expressed by the general rule `cell.X >= (level.Width * 2) / 3`.
+The board is 19 columns wide with zero-based coordinates. The rightmost third begins at column 12, expressed by the general rule `cell.X >= (level.Width * 2) / 3`. Column 18 is the permanent boundary wall, so generated playable candidates occupy columns 12 through 17.
 
 ## Goals
 
@@ -32,7 +32,7 @@ The board is 18 columns wide with zero-based coordinates. The rightmost third is
 
 A focused candidate builder derives `StairCandidates` from immutable authored level data. It enumerates the rightmost third in a stable order and includes a cell only when it:
 
-- is inside the board and in columns 12 through 17;
+- is inside the board and satisfies the right-third formula, producing playable candidates in columns 12 through 17;
 - is a walkable floor cell connected to the player's playable area;
 - differs from the player and lamp start;
 - does not overlap a wall, flask, crawler, or moth; and
