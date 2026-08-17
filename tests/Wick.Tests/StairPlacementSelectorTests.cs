@@ -73,6 +73,20 @@ public sealed class StairPlacementSelectorTests
         Assert.Throws<InvalidOperationException>(() => selector.SelectForAttempt(level));
     }
 
+    [Fact]
+    public void SelectForAttempt_RemembersPreviousStairsIndependentlyPerLevel()
+    {
+        var levelTwo = CreateLevel(index: 2);
+        var levelThree = CreateLevel(index: 3);
+        var selector = new StairPlacementSelector(new Random(41));
+
+        var levelTwoFirst = selector.SelectForAttempt(levelTwo).StairCell;
+        selector.SelectForAttempt(levelThree);
+        var levelTwoRetry = selector.SelectForAttempt(levelTwo).StairCell;
+
+        Assert.NotEqual(levelTwoFirst, levelTwoRetry);
+    }
+
     private static LevelDefinition CreateLevel(int index = 2, params GridCoord[] candidates)
     {
         var defaultCandidates = new[]

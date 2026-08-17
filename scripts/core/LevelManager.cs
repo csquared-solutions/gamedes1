@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 using Wick.Actors;
 using Wick.Board;
@@ -12,6 +13,8 @@ namespace Wick.Core;
 public partial class LevelManager : Node
 {
     private readonly LevelLoader _loader = new();
+    private readonly StairPlacementSelector _stairPlacement = new();
+    private readonly Dictionary<int, LevelDefinition> _activeAttempts = new();
     private readonly CampaignSessionState _session = new(7);
     private readonly PracticeModeState _practice = new();
     private BoardState _board;
@@ -158,8 +161,19 @@ public partial class LevelManager : Node
     private void LoadActiveLevel(int index, bool preserveUndo)
     {
         _presentationGeneration++;
+        var previousLevelIndex = _currentLevel?.Index;
         ActivateCampaignScene(index);
-        _currentLevel = _campaignScene.Definition;
+        var restoresPreviousAttempt = preserveUndo && previousLevelIndex.HasValue && index < previousLevelIndex.Value;
+        if (restoresPreviousAttempt && _activeAttempts.TryGetValue(index, out var restoredLevel))
+        {
+            _currentLevel = restoredLevel;
+        }
+        else
+        {
+            _currentLevel = _stairPlacement.SelectForAttempt(_campaignScene.Definition);
+            _activeAttempts[index] = _currentLevel;
+        }
+
         _board = new BoardState(_currentLevel.Width, _currentLevel.Height, _currentLevel.Walls);
         _visibility = new VisibilitySystem(_board);
         _lamp.Initialize(_currentLevel.LampStart);
