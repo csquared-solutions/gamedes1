@@ -35,16 +35,30 @@ public sealed class CampaignSimulationTests
     [Theory]
     [InlineData(1u)]
     [InlineData(2u)]
-    public void Campaign_BothRandomTieBreakOutcomesPreserveWinningRoutes(uint tieBreakerSeed)
+    public void Campaign_EveryStairCandidatePreservesAWinningRoute(uint tieBreakerSeed)
     {
-        foreach (var level in new LevelLoader().LoadCampaign())
+        foreach (var authoredLevel in new LevelLoader().LoadCampaign())
         {
-            var result = CampaignSimulationHarness.FindWinningPlan(
-                level,
-                new SimulationRequirements(RequireFlare: level.Index == 1),
-                tieBreakerSeed: tieBreakerSeed);
+            foreach (var candidate in authoredLevel.StairCandidates)
+            {
+                var level = authoredLevel.WithStairCell(candidate);
+                var result = CampaignSimulationHarness.FindWinningPlan(
+                    level,
+                    new SimulationRequirements(RequireFlare: level.Index == 1),
+                    tieBreakerSeed: tieBreakerSeed);
 
-            Assert.True(result.Won, $"Seed {tieBreakerSeed}: {result.Summary}");
+                Assert.True(result.Won,
+                    $"Level {level.Index}, stair {candidate}, seed {tieBreakerSeed}: {result.Summary}");
+                Assert.InRange(
+                    result.RemainingWick,
+                    level.TargetCompletionWickMin,
+                    level.TargetCompletionWickMax);
+                if (level.RequiresLampPlacement)
+                {
+                    Assert.True(result.PlacedLamp,
+                        $"Level {level.Index}, stair {candidate} bypassed required lamp placement.");
+                }
+            }
         }
     }
 

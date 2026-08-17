@@ -45,11 +45,17 @@ public sealed class LevelSolvabilityTests
         Assert.Equal(13, level.Height);
         Assert.True(board.IsWalkable(level.PlayerStart));
         Assert.True(board.IsWalkable(level.LampStart));
-        Assert.True(board.IsWalkable(level.StairCell));
+        Assert.Equal(3, level.StairCandidates.Length);
+        Assert.Equal(3, level.StairCandidates.Distinct().Count());
+        Assert.Equal(level.StairCandidates[0], level.StairCell);
+        Assert.All(level.StairCandidates, candidate =>
+        {
+            Assert.True(board.IsWalkable(candidate));
+            Assert.NotNull(FindShortestPath(board, level.PlayerStart, candidate));
+        });
         Assert.All(level.Crawlers, cell => Assert.True(board.IsWalkable(cell)));
         Assert.All(level.Moths, cell => Assert.True(board.IsWalkable(cell)));
         Assert.All(level.Flasks, cell => Assert.True(board.IsWalkable(cell)));
-        Assert.NotNull(FindShortestPath(board, level.PlayerStart, level.StairCell));
     }
 
     [Theory]
@@ -68,7 +74,7 @@ public sealed class LevelSolvabilityTests
         var authoredObjects = level.Crawlers
             .Concat(level.Moths)
             .Concat(level.Flasks)
-            .Append(level.StairCell);
+            .Concat(level.StairCandidates);
 
         Assert.All(authoredObjects, cell =>
             Assert.True(reachable.Contains(cell), $"Level {levelIndex} object at {cell} is isolated by walls."));
@@ -88,7 +94,7 @@ public sealed class LevelSolvabilityTests
         var occupied = level.Crawlers
             .Concat(level.Moths)
             .Concat(level.Flasks)
-            .Append(level.StairCell)
+            .Concat(level.StairCandidates)
             .Append(level.PlayerStart)
             .ToArray();
 
@@ -183,13 +189,15 @@ public sealed class LevelSolvabilityTests
     {
         var level = new LevelLoader().Load(levelIndex);
         var board = new BoardState(level.Width, level.Height, level.Walls);
-        var path = FindShortestPath(board, level.PlayerStart, level.StairCell);
-
-        Assert.NotNull(path);
-        var requiredActionCost = path!.Count - 1 + (level.RequiresLampPlacement ? 1 : 0);
-        var availableWick = level.StartingWick + (level.Flasks.Length * LevelTuning.FlaskRestore);
-        Assert.True(requiredActionCost < availableWick,
-            $"Level {levelIndex} has no wick margin across its authored route and fixed flasks.");
+        foreach (var candidate in level.StairCandidates)
+        {
+            var path = FindShortestPath(board, level.PlayerStart, candidate);
+            Assert.NotNull(path);
+            var requiredActionCost = path!.Count - 1 + (level.RequiresLampPlacement ? 1 : 0);
+            var availableWick = level.StartingWick + (level.Flasks.Length * LevelTuning.FlaskRestore);
+            Assert.True(requiredActionCost < availableWick,
+                $"Level {levelIndex} candidate {candidate} has no wick margin.");
+        }
     }
 
     private static IReadOnlyList<GridCoord>? FindShortestPath(BoardState board, GridCoord start, GridCoord goal)
