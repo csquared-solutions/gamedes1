@@ -15,6 +15,26 @@ public sealed class PresentationPaletteTests
     }
 
     [Fact]
+    public void SootAndGoldMaterials_PreserveReadableContrast()
+    {
+        Assert.True(PresentationPalette.ContrastRatio(PresentationPalette.Brass, PresentationPalette.Soot) >= 7.0);
+        Assert.True(PresentationPalette.ContrastRatio(PresentationPalette.Wax, PresentationPalette.StoneShadow) >= 7.0);
+        Assert.True(PresentationPalette.ContrastRatio(PresentationPalette.Ember, PresentationPalette.HiddenFloor) >= 4.5);
+    }
+
+    [Fact]
+    public void DungeonSurfacePattern_IsDeterministicAndLightFallsOffFromTheLamp()
+    {
+        var cell = new Wick.Board.GridCoord(7, 4);
+
+        Assert.Equal(DungeonSurfacePattern.StoneVariant(cell), DungeonSurfacePattern.StoneVariant(cell));
+        Assert.InRange(DungeonSurfacePattern.StoneVariant(cell), 0, 4);
+        Assert.True(DungeonSurfacePattern.LightStrength(cell, cell, radius: 5) >
+            DungeonSurfacePattern.LightStrength(new Wick.Board.GridCoord(9, 4), cell, radius: 5));
+        Assert.Equal(0f, DungeonSurfacePattern.LightStrength(new Wick.Board.GridCoord(13, 4), cell, radius: 5));
+    }
+
+    [Fact]
     public void GaugeVisuals_FlickerOnlyInTheFinalThreeAndPulseOnMothWake()
     {
         Assert.Equal(1f, WickGaugeVisualState.GetBrightness(wick: 4, mothPulseRemaining: 0f, phase: 0f));

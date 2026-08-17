@@ -45,6 +45,29 @@ public sealed class PresentationContractTests
         Assert.NotNull(scene.RequireNode(nodeName));
     }
 
+    [Theory]
+    [InlineData("scenes/actors/Player.tscn", "Hood")]
+    [InlineData("scenes/actors/Lamp.tscn", "GlowHalo")]
+    [InlineData("scenes/hazards/Crawler.tscn", "Legs")]
+    [InlineData("scenes/hazards/Moth.tscn", "WingVeins")]
+    [InlineData("scenes/pickups/OilFlask.tscn", "GlassOutline")]
+    [InlineData("scenes/goals/Stair.tscn", "Arch")]
+    public void GameplayMarkers_IncludeSootAndGoldIllustrationDetails(string relativePath, string nodeName)
+    {
+        var scene = GodotTextSceneContract.ParseFile(ProjectFile(relativePath.Split('/')));
+
+        Assert.NotNull(scene.RequireNode(nodeName));
+    }
+
+    [Fact]
+    public void StartScreen_UsesTheAuthoredDungeonBackdrop()
+    {
+        Assert.True(File.Exists(ProjectFile("assets", "art", "start-backdrop.svg")));
+        var scene = GodotTextSceneContract.ParseFile(ProjectFile("scenes", "ui", "Hud.tscn"));
+
+        Assert.Equal("TextureRect", scene.RequireNode("DungeonBackdrop").Type);
+    }
+
     [Fact]
     public void SubmissionAssetsAndAttribution_ArePresent()
     {

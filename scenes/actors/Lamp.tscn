@@ -5,15 +5,37 @@
 [node name="Lamp" type="Node2D"]
 script = ExtResource("1_lamp")
 
+[node name="GlowHalo" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -23, 12, -19, 21, -10, 23, 0, 19, 12, 10, 21, 0, 23, -12, 19, -21, 10, -23, 0, -19, -12, -10, -21)
+color = Color(0.847, 0.667, 0.306, 0.12)
+
 [node name="LanternFrame" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(-13, 15, -11, -8, -6, -15, 6, -15, 11, -8, 13, 15)
-color = Color(0.09, 0.098, 0.106, 1)
+polygon = PackedVector2Array(-14, 15, -12, -8, -7, -15, 7, -15, 12, -8, 14, 15)
+color = Color(0.055, 0.051, 0.043, 1)
+
+[node name="LampGlass" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-9, 10, -8, -6, -4, -11, 4, -11, 8, -6, 9, 10)
+color = Color(0.847, 0.667, 0.306, 0.32)
 
 [node name="FlameSilhouette" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(0, -12, 8, 2, 4, 11, 0, 14, -5, 10, -8, 2)
+polygon = PackedVector2Array(0, -13, 7, -2, 5, 7, 0, 12, -5, 7, -7, -2)
 color = Color(1, 0.902, 0.639, 1)
+
+[node name="FlameCore" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -6, 3, 0, 1, 6, -2, 5, -3, 0)
+color = Color(1, 0.957, 0.812, 1)
 
 [node name="LampHandle" type="Line2D" parent="."]
 points = PackedVector2Array(-7, -14, -5, -20, 5, -20, 7, -14)
 width = 3.0
-default_color = Color(0.816, 0.659, 0.306, 1)
+default_color = Color(0.847, 0.667, 0.306, 1)
+
+[node name="FrameCrossbars" type="Line2D" parent="."]
+points = PackedVector2Array(-11, -6, 11, -6, 9, 10, -9, 10, -11, -6)
+width = 2.0
+default_color = Color(0.847, 0.667, 0.306, 1)
+
+[node name="LampBase" type="Line2D" parent="."]
+points = PackedVector2Array(-15, 15, 15, 15)
+width = 4.0
+default_color = Color(0.847, 0.667, 0.306, 1)

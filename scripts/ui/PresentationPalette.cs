@@ -5,14 +5,23 @@ namespace Wick.Ui;
 
 public static class PresentationPalette
 {
-    public static readonly Color HiddenFloor = new("08090b");
-    public static readonly Color RememberedFloor = new("24221f");
-    public static readonly Color VisibleFloor = new("51452f");
-    public static readonly Color Wall = new("17191b");
-    public static readonly Color Amber = new("d0a84e");
-    public static readonly Color Flame = new("ffe6a3");
+    public static readonly Color Soot = new("0a0908");
+    public static readonly Color StoneShadow = new("201d19");
+    public static readonly Color Stone = new("473a29");
+    public static readonly Color StoneHighlight = new("685333");
+    public static readonly Color Brass = new("d8aa4e");
+    public static readonly Color Wax = new("f7e9bb");
+    public static readonly Color Ember = new("e06b42");
+    public static readonly Color MemoryChalk = new("716655");
+
+    public static readonly Color HiddenFloor = Soot;
+    public static readonly Color RememberedFloor = StoneShadow;
+    public static readonly Color VisibleFloor = Stone;
+    public static readonly Color Wall = new("171512");
+    public static readonly Color Amber = Brass;
+    public static readonly Color Flame = Wax;
     public static readonly Color Player = new("fff4cf");
-    public static readonly Color Danger = new("c65f42");
+    public static readonly Color Danger = Ember;
 
     public static double ContrastRatio(Color first, Color second)
     {

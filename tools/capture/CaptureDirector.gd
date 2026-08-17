@@ -14,6 +14,10 @@ func _prepare_capture() -> void:
 	$GameRoot/LevelManager.BeginGame()
 
 	match scenario:
+		"moth-preview":
+			$GameRoot/LevelManager.LoadCampaignLevel(3)
+			$GameRoot/LevelManager.BeginGame()
+			$CaptureBridge.StageMothPreview()
 		"crawler-edge":
 			await _press("move_right")
 		"first-branch":

@@ -5,12 +5,37 @@
 [node name="Player" type="Node2D"]
 script = ExtResource("1_player")
 
+[node name="GroundShadow" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-15, 15, -10, 11, 10, 11, 15, 15, 10, 19, -10, 19)
+color = Color(0.039, 0.035, 0.031, 0.78)
+
 [node name="WickSilhouette" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(0, -19, 8, -10, 11, 3, 8, 16, 0, 20, -8, 16, -11, 3, -8, -10)
+polygon = PackedVector2Array(0, -18, 8, -12, 12, -2, 10, 15, 4, 20, -4, 20, -10, 15, -12, -2, -8, -12)
 color = Color(1, 0.957, 0.812, 1)
 
+[node name="CloakFold" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -4, 5, 15, 0, 19, -5, 15)
+color = Color(0.847, 0.667, 0.306, 0.68)
+
+[node name="Hood" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -20, 9, -12, 7, 0, 0, 5, -7, 0, -9, -12)
+color = Color(0.847, 0.667, 0.306, 1)
+
+[node name="Face" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -14, 5, -9, 4, -3, 0, 0, -4, -3, -5, -9)
+color = Color(0.039, 0.035, 0.031, 1)
+
+[node name="EyeGlint" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-2, -8, 0, -10, 2, -8, 0, -6)
+color = Color(1, 0.902, 0.639, 1)
+
 [node name="Outline" type="Line2D" parent="."]
-points = PackedVector2Array(0, -19, 8, -10, 11, 3, 8, 16, 0, 20, -8, 16, -11, 3, -8, -10)
+points = PackedVector2Array(0, -18, 8, -12, 12, -2, 10, 15, 4, 20, -4, 20, -10, 15, -12, -2, -8, -12)
 width = 2.0
 default_color = Color(0.035, 0.039, 0.047, 1)
 closed = true
+
+[node name="Hem" type="Line2D" parent="."]
+points = PackedVector2Array(-8, 14, -3, 12, 2, 15, 8, 13)
+width = 1.5
+default_color = Color(0.424, 0.337, 0.2, 1)

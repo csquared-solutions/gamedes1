@@ -7,10 +7,28 @@ script = ExtResource("1_oil_flask")
 
 [node name="FlaskSilhouette" type="Node2D" parent="."]
 
+[node name="Shadow" type="Polygon2D" parent="FlaskSilhouette"]
+polygon = PackedVector2Array(-14, 11, -9, 8, 9, 8, 14, 11, 9, 15, -9, 15)
+color = Color(0.039, 0.035, 0.031, 0.72)
+
 [node name="Bottle" type="Polygon2D" parent="FlaskSilhouette"]
-polygon = PackedVector2Array(-10, -14, 10, -14, 13, 12, -13, 12)
-color = Color(1, 0.902, 0.639, 1)
+polygon = PackedVector2Array(-7, -15, 7, -15, 7, -9, 11, -5, 14, 12, -14, 12, -11, -5, -7, -9)
+color = Color(1, 0.902, 0.639, 0.84)
 
 [node name="OilBand" type="Polygon2D" parent="FlaskSilhouette"]
-polygon = PackedVector2Array(-10, 2, 10, 2, 12, 10, -12, 10)
-color = Color(0.2, 0.18, 0.13, 1)
+polygon = PackedVector2Array(-11, 1, 11, 1, 13, 10, -13, 10)
+color = Color(0.31, 0.239, 0.125, 1)
+
+[node name="OilGlint" type="Polygon2D" parent="FlaskSilhouette"]
+polygon = PackedVector2Array(-8, 3, -4, 2, -5, 8, -9, 9)
+color = Color(1, 0.957, 0.812, 0.78)
+
+[node name="Cork" type="Polygon2D" parent="FlaskSilhouette"]
+polygon = PackedVector2Array(-8, -18, 8, -18, 7, -13, -7, -13)
+color = Color(0.49, 0.302, 0.157, 1)
+
+[node name="GlassOutline" type="Line2D" parent="FlaskSilhouette"]
+points = PackedVector2Array(-7, -15, -7, -9, -11, -5, -14, 12, 14, 12, 11, -5, 7, -9, 7, -15)
+width = 2.0
+default_color = Color(1, 0.957, 0.812, 1)
+closed = true

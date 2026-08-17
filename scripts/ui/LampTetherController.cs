@@ -33,6 +33,7 @@ public partial class LampTetherController : Node2D
             return;
         }
 
-        DrawDashedLine(_player.Position, _lamp.Position, new Color(1f, 0.78f, 0.25f, 0.72f), 2f, 9f);
+        DrawDashedLine(_player.Position, _lamp.Position, new Color(0.04f, 0.035f, 0.025f, 0.9f), 5f, 9f);
+        DrawDashedLine(_player.Position, _lamp.Position, new Color(0.85f, 0.67f, 0.31f, 0.82f), 1.5f, 9f);
     }
 }

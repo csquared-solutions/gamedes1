@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/HudController.cs" id="1_hud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/WickGauge.tscn" id="2_wick_gauge"]
 [ext_resource type="PackedScene" path="res://scenes/ui/HazardStateIcon.tscn" id="3_hazard_icon"]
 [ext_resource type="FontFile" path="res://assets/fonts/AtkinsonHyperlegible-Regular.ttf" id="4_font"]
 [ext_resource type="Script" path="res://scripts/ui/StartScreenController.cs" id="5_start"]
+[ext_resource type="Texture2D" path="res://assets/art/start-backdrop.svg" id="6_backdrop"]
 
 [sub_resource type="Theme" id="Theme_wick"]
 default_font = ExtResource("4_font")
@@ -21,6 +22,8 @@ corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.72)
+shadow_size = 7
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_start"]
 bg_color = Color(0.055, 0.059, 0.067, 0.98)
@@ -33,6 +36,8 @@ corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.82)
+shadow_size = 18
 
 [node name="Hud" type="CanvasLayer"]
 layer = 2
@@ -124,6 +129,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.016, 0.018, 0.023, 1)
+
+[node name="DungeonBackdrop" type="TextureRect" parent="StartOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_backdrop")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="Card" type="PanelContainer" parent="StartOverlay"]
 layout_mode = 1

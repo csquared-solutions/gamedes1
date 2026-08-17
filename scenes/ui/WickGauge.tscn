@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/WickGaugeController.cs" id="1_wick_gauge"]
 
 [node name="WickGauge" type="Control"]
-custom_minimum_size = Vector2(260, 48)
+custom_minimum_size = Vector2(260, 58)
 script = ExtResource("1_wick_gauge")
 
 [node name="Readout" type="Label" parent="."]
@@ -12,6 +12,6 @@ theme_override_font_sizes/font_size = 20
 text = "WICK 0   SIGHT 0"
 
 [node name="Warning" type="Label" parent="."]
-offset_top = 24.0
+offset_top = 36.0
 theme_override_colors/font_color = Color(1, 0.35, 0.25, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 14

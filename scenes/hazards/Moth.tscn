@@ -2,12 +2,31 @@
 
 [node name="Moth" type="Node2D"]
 
-[node name="MothSilhouette" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(0, -21, 5, -9, 14, -15, 12, -2, 18, 8, 6, 6, 2, 20, -2, 20, -6, 6, -18, 8, -12, -2, -14, -15, -5, -9)
-color = Color(0.816, 0.659, 0.306, 1)
+[node name="GroundShadow" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-15, 15, -8, 11, 8, 11, 15, 15, 8, 19, -8, 19)
+color = Color(0.039, 0.035, 0.031, 0.7)
+
+[node name="MothSilhouette" type="Node2D" parent="."]
+
+[node name="LeftWing" type="Polygon2D" parent="MothSilhouette"]
+polygon = PackedVector2Array(-2, -8, -9, -19, -18, -15, -20, -3, -14, 9, -5, 5)
+color = Color(0.847, 0.667, 0.306, 1)
+
+[node name="RightWing" type="Polygon2D" parent="MothSilhouette"]
+polygon = PackedVector2Array(2, -8, 9, -19, 18, -15, 20, -3, 14, 9, 5, 5)
+color = Color(0.847, 0.667, 0.306, 1)
+
+[node name="Body" type="Polygon2D" parent="MothSilhouette"]
+polygon = PackedVector2Array(0, -20, 5, -9, 3, 16, 0, 21, -3, 16, -5, -9)
+color = Color(1, 0.902, 0.639, 1)
 
 [node name="MothOutline" type="Line2D" parent="."]
-points = PackedVector2Array(0, -21, 5, -9, 14, -15, 12, -2, 18, 8, 6, 6, 2, 20, -2, 20, -6, 6, -18, 8, -12, -2, -14, -15, -5, -9)
+points = PackedVector2Array(0, -20, 9, -19, 18, -15, 20, -3, 14, 9, 5, 5, 3, 16, 0, 21, -3, 16, -5, 5, -14, 9, -20, -3, -18, -15, -9, -19)
 width = 2.0
 default_color = Color(1, 0.957, 0.812, 1)
 closed = true
+
+[node name="WingVeins" type="Line2D" parent="."]
+points = PackedVector2Array(-3, -7, -15, -13, -5, -4, -16, 3, -5, 1, -11, 8, 3, -7, 15, -13, 5, -4, 16, 3, 5, 1, 11, 8)
+width = 1.25
+default_color = Color(0.259, 0.204, 0.118, 0.9)
