@@ -12,7 +12,7 @@ The board is 19 columns wide with zero-based coordinates. The rightmost third be
 
 ## Goals
 
-- Build each level's stair pool from safe, reachable floor cells in the rightmost third of its map.
+- Give each level an authored pool containing its simulation-validated floor cells in the rightmost third.
 - Select a stair position when each level attempt begins.
 - Guarantee that a retry uses a different stair cell from the immediately previous attempt on that level.
 - Preserve the original authored stair as an eligible location when it satisfies the right-side safety rules.
@@ -28,17 +28,19 @@ The board is 19 columns wide with zero-based coordinates. The rightmost third be
 - Moving the stair during an active attempt.
 - Rerolling the stair when Practice Mode Undo restores an action.
 
-## Candidate Generation
+## Validated Candidate Pools
 
-A focused candidate builder derives `StairCandidates` from immutable authored level data. It enumerates the rightmost third in a stable order and includes a cell only when it:
+Each immutable `LevelDefinition` declares its complete validated `StairCandidates` pool in stable coordinate order. Planning validation enumerates the structurally eligible rightmost-third cells and retains a cell only when it:
 
 - is inside the board and satisfies the right-third formula, producing playable candidates in columns 12 through 17;
 - is a walkable floor cell connected to the player's playable area;
 - differs from the player and lamp start;
-- does not overlap a wall, flask, crawler, or moth; and
-- is not in the level's authored `StairExclusions`.
+- does not overlap a wall, flask, crawler, or moth;
+- preserves a winning route within the level's wick completion band;
+- preserves required lamp-placement behavior on levels three through seven; and
+- remains viable for both supported crawler tie-break seeds under the finite validation bound.
 
-Every cell that passes these structural rules belongs to the runtime pool. There is no three-candidate cap. `StairExclusions` may contain only right-side cells proven unsafe by the full wick, lamp, route, or hazard simulations; it is not used to impose a small arbitrary pool. Campaign construction rejects duplicate or out-of-region exclusions and rejects a level with fewer than two candidates because that level could not guarantee movement on retry.
+Every cell that passes these rules belongs to the runtime pool. There is no three-candidate cap. The validated pool sizes for levels one through seven are 8, 21, 23, 44, 32, 39, and 45. Campaign construction rejects duplicate or out-of-region candidates and rejects a level with fewer than two candidates because that level could not guarantee movement on retry.
 
 The original fixed stair for each level remains the authored/default `StairCell` and must appear in the generated pool. This retains the original route as one possible attempt and provides a stable default for simulations that do not request random selection.
 
@@ -62,7 +64,7 @@ Same-level `Z` Undo restores gameplay in place and does not run the selector. Wh
 
 ## Runtime Flow
 
-`LevelLoader` creates the immutable authored level and its complete right-side candidate pool. `LevelManager.LoadActiveLevel` asks `StairPlacementSelector` for an active definition before initializing gameplay systems. Existing systems continue to consume `_currentLevel.StairCell`:
+`LevelLoader` creates the immutable authored level from its complete validated right-side candidate pool. `LevelManager.LoadActiveLevel` asks `StairPlacementSelector` for an active definition before initializing gameplay systems. Existing systems continue to consume `_currentLevel.StairCell`:
 
 1. `StairController` places and reveals the stair at the active cell.
 2. `StairEntryRule` checks the same active cell and the existing carried-lamp restriction.
@@ -74,37 +76,37 @@ No visual teleport occurs during play. A newly selected stair first appears only
 
 ## Fairness And Failure Handling
 
-Candidate generation is deterministic; randomization selects only from the generated result. Invalid campaign data fails construction or automated tests rather than silently falling back to arbitrary floor cells.
+Candidate data is deterministic; randomization selects only from the validated authored pool. Invalid campaign data fails construction or automated tests rather than silently falling back to arbitrary floor cells.
 
 Duplicate candidates are invalid. Selection never loops while searching for a different value; it filters out the previous cell and chooses directly from the remaining pool.
 
-The full safety suite remains the release gate. If a generated right-side cell fails route, wick, lamp, overlap, or supported hazard-seed validation, the level cannot ship until its geometry is corrected or that cell is explicitly documented in `StairExclusions`. Test performance may be improved through harness optimization or safe parallel execution, but coverage must not be reduced by sampling random candidates.
+The full safety suite remains the release gate. If a declared right-side candidate fails route, wick, lamp, overlap, or supported hazard-seed validation, the level cannot ship until its geometry is corrected or that candidate is removed from the pool. Test performance may be improved through harness optimization or safe parallel execution, but coverage must not be reduced by sampling random candidates.
 
 ## Testing
 
-Candidate-builder tests will prove that every generated cell:
+Candidate-pool tests will prove that every declared cell:
 
 - lies in the rightmost third;
 - is a distinct, walkable, reachable floor cell;
 - does not overlap starts, walls, flasks, crawlers, or moths;
 - includes the original authored stair;
-- honors only distinct, in-region authored exclusions; and
-- is generated deterministically from the same level data.
+- matches the approved per-level pool size; and
+- remains in stable coordinate order.
 
 Selector tests will prove that selection:
 
-- chooses only generated candidates;
+- chooses only validated candidates;
 - never repeats the immediately previous stair on a retry;
 - remains deterministic when supplied a seeded random source;
 - works with candidate pools larger than three;
 - does not mutate the authored level definition.
 
-Campaign simulations will solve every generated candidate with both crawler tie-break seeds and verify the existing completion-wick bands and lamp-placement requirements. Runtime checks will verify that loading and restarting use the selected active cell, while same-level and cross-level Undo retain the current cell. Existing stair visibility, HUD, campaign progression, packaging, and seven-level tests remain in the regression suite.
+Campaign simulations will solve every declared candidate with both crawler tie-break seeds, a 20,000-state finite bound per route, and controlled parallel execution. They verify the existing completion-wick bands and lamp-placement requirements. Runtime checks will verify that loading and restarting use the selected active cell, while same-level and cross-level Undo retain the current cell. Existing stair visibility, HUD, campaign progression, packaging, and seven-level tests remain in the regression suite.
 
 ## GDD Alignment Amendment
 
 This approved playtest revision replaces the previous `three authored exits` amendment with:
 
-> Each of the seven authored levels generates a pool from all validated, reachable stair locations in the rightmost third of the map. One location is selected per attempt, and a retry must select a different location from the previous attempt. The stair remains fixed during the attempt and is not changed by Undo.
+> Each of the seven authored levels provides a pool containing all validated, reachable stair locations in the rightmost third of the map. One location is selected per attempt, and a retry must select a different location from the previous attempt. The stair remains fixed during the attempt and is not changed by Undo.
 
 This remains a controlled expansion of the original fixed-exit requirement. It adds greater route variety without changing authored layouts, resource rules, hazards, darkness, lamp handling, or campaign progression.
