@@ -29,6 +29,23 @@ public sealed class StairPlacementSelectorTests
     }
 
     [Fact]
+    public void SelectForAttempt_SupportsPoolsLargerThanThree()
+    {
+        var candidates = Enumerable.Range(0, 8)
+            .Select(offset => new GridCoord(12 + (offset / 4), 2 + (offset % 4)))
+            .ToArray();
+        var level = CreateLevel(2, candidates);
+        var selector = new StairPlacementSelector(new Random(73));
+        var selected = Enumerable.Range(0, 40)
+            .Select(_ => selector.SelectForAttempt(level).StairCell)
+            .ToArray();
+
+        Assert.All(selected, cell => Assert.Contains(cell, candidates));
+        Assert.True(selected.Distinct().Count() > 3);
+        Assert.All(selected.Zip(selected.Skip(1)), pair => Assert.NotEqual(pair.First, pair.Second));
+    }
+
+    [Fact]
     public void SelectForAttempt_ProducesTheSameSequenceForTheSameSeed()
     {
         var level = CreateLevel();

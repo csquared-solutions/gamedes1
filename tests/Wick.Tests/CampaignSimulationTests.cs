@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Wick.Data;
 using Wick.Board;
 using Xunit;
@@ -32,34 +33,41 @@ public sealed class CampaignSimulationTests
         }
     }
 
-    [Theory]
-    [InlineData(1u)]
-    [InlineData(2u)]
-    public void Campaign_EveryStairCandidatePreservesAWinningRoute(uint tieBreakerSeed)
+    [Fact]
+    public void Campaign_EveryRightSideStairCandidatePreservesAWinningRoute()
     {
-        foreach (var authoredLevel in new LevelLoader().LoadCampaign())
-        {
-            foreach (var candidate in authoredLevel.StairCandidates)
-            {
-                var level = authoredLevel.WithStairCell(candidate);
-                var result = CampaignSimulationHarness.FindWinningPlan(
-                    level,
-                    new SimulationRequirements(RequireFlare: level.Index == 1),
-                    tieBreakerSeed: tieBreakerSeed);
+        var cases = new LevelLoader().LoadCampaign()
+            .SelectMany(level => level.StairCandidates.Select(candidate => (level, candidate)))
+            .ToArray();
+        var failures = new ConcurrentQueue<string>();
 
-                Assert.True(result.Won,
-                    $"Level {level.Index}, stair {candidate}, seed {tieBreakerSeed}: {result.Summary}");
-                Assert.InRange(
-                    result.RemainingWick,
-                    level.TargetCompletionWickMin,
-                    level.TargetCompletionWickMax);
-                if (level.RequiresLampPlacement)
+        Assert.Equal(212, cases.Length);
+        Parallel.ForEach(
+            cases,
+            new ParallelOptions { MaxDegreeOfParallelism = 10 },
+            item =>
+            {
+                foreach (var tieBreakerSeed in new[] { 1u, 2u })
                 {
-                    Assert.True(result.PlacedLamp,
-                        $"Level {level.Index}, stair {candidate} bypassed required lamp placement.");
+                    var active = item.level.WithStairCell(item.candidate);
+                    var result = CampaignSimulationHarness.FindWinningPlan(
+                        active,
+                        new SimulationRequirements(RequireFlare: active.Index == 1),
+                        maxStates: 20_000,
+                        tieBreakerSeed: tieBreakerSeed);
+                    var valid = result.Won &&
+                        result.RemainingWick >= active.TargetCompletionWickMin &&
+                        result.RemainingWick <= active.TargetCompletionWickMax &&
+                        (!active.RequiresLampPlacement || result.PlacedLamp);
+                    if (!valid)
+                    {
+                        failures.Enqueue(
+                            $"Level {active.Index}, stair {item.candidate}, seed {tieBreakerSeed}: {result.Summary}");
+                    }
                 }
-            }
-        }
+            });
+
+        Assert.Empty(failures);
     }
 
     [Fact]
