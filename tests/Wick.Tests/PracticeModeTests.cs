@@ -74,7 +74,7 @@ public sealed class PracticeModeTests
         practice.SetEnabled(true);
         var before = GameplaySnapshot.Capture(3, player, lamp, wick, turns, hazards, flasks, visibility, false, false);
 
-        Assert.True(player.TryPlaceLamp());
+        Assert.True(player.TryToggleLamp());
         Assert.True(player.TryMove(new GridCoord(1, 0)));
         Assert.True(flasks.TryBeginLift(player.Cell));
         hazards.AdvanceTurn(visibility, lamp.Cell, wick.CurrentRadius);

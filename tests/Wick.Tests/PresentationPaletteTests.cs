@@ -35,6 +35,19 @@ public sealed class PresentationPaletteTests
     }
 
     [Fact]
+    public void HazardStateColor_GivesEachMotionStateADistinctReadableHue()
+    {
+        var stalled = HazardStateColor.For(Wick.Hazards.HazardMotionState.Stalled);
+        var slowed = HazardStateColor.For(Wick.Hazards.HazardMotionState.Slowed);
+        var moving = HazardStateColor.For(Wick.Hazards.HazardMotionState.Moving);
+
+        Assert.NotEqual(stalled, slowed);
+        Assert.NotEqual(slowed, moving);
+        Assert.NotEqual(stalled, moving);
+        Assert.True(PresentationPalette.ContrastRatio(moving, PresentationPalette.VisibleFloor) >= 3.0);
+    }
+
+    [Fact]
     public void GaugeVisuals_FlickerOnlyInTheFinalThreeAndPulseOnMothWake()
     {
         Assert.Equal(1f, WickGaugeVisualState.GetBrightness(wick: 4, mothPulseRemaining: 0f, phase: 0f));

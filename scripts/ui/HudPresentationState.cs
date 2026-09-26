@@ -29,7 +29,7 @@ public static class HudPresentationState
         return new HudPresentation(
             campaignStatus,
             practiceStatus,
-            "P PRACTICE | Z UNDO | E SET LAMP | F FLARE | R RESTART",
+            "P PRACTICE | Z UNDO | E LAMP | F FLARE | R RESTART",
             input.IsExitBlockedByCarriedLamp
                 ? "EXIT BLOCKED: STEP BACK, PRESS E TO SET LAMP, THEN RETURN"
                 : string.Empty);

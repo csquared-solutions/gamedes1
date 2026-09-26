@@ -43,7 +43,7 @@ public sealed class PlayerMovementStateTests
     }
 
     [Fact]
-    public void TryPlaceLamp_LeavesLampBehind_WhenPlayerMovesAway()
+    public void TryToggleLamp_LeavesLampBehind_WhenPlayerMovesAway()
     {
         var wick = new WickState();
         wick.Initialize(5);
@@ -53,7 +53,7 @@ public sealed class PlayerMovementStateTests
         var visibility = new VisibilitySystem(board);
         var state = new PlayerMovementState(board, wick, turns, lamp, new GridCoord(2, 2), visibility);
 
-        Assert.True(state.TryPlaceLamp());
+        Assert.True(state.TryToggleLamp());
         Assert.True(state.TryMove(new GridCoord(1, 0)));
         Assert.True(state.TryMove(new GridCoord(1, 0)));
 
@@ -65,7 +65,7 @@ public sealed class PlayerMovementStateTests
     }
 
     [Fact]
-    public void TryPlaceLamp_ConsumesOneWickAndAdvancesTurn()
+    public void TryToggleLamp_ConsumesOneWickAndAdvancesTurn()
     {
         var wick = new WickState();
         wick.Initialize(5);
@@ -73,10 +73,47 @@ public sealed class PlayerMovementStateTests
         var lamp = new LampState(new GridCoord(2, 2));
         var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
 
-        Assert.True(state.TryPlaceLamp());
+        Assert.True(state.TryToggleLamp());
 
         Assert.Equal(4, wick.CurrentWick);
         Assert.Equal(1, turns.CurrentTurn);
+    }
+
+    [Fact]
+    public void TryToggleLamp_RecoversPlacedLamp_WhenStandingOnIt()
+    {
+        var wick = new WickState();
+        wick.Initialize(5);
+        var turns = new TurnState();
+        var lamp = new LampState(new GridCoord(2, 2));
+        var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
+
+        Assert.True(state.TryToggleLamp());
+        Assert.False(lamp.IsCarried);
+        Assert.True(state.TryToggleLamp());
+
+        Assert.True(lamp.IsCarried);
+        Assert.Equal(state.Cell, lamp.Cell);
+        Assert.Equal(3, wick.CurrentWick);
+        Assert.Equal(2, turns.CurrentTurn);
+    }
+
+    [Fact]
+    public void TryToggleLamp_DoesNothing_WhenLampIsElsewhere()
+    {
+        var wick = new WickState();
+        wick.Initialize(5);
+        var turns = new TurnState();
+        var lamp = new LampState(new GridCoord(2, 2));
+        var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
+
+        Assert.True(state.TryToggleLamp());
+        Assert.True(state.TryMove(new GridCoord(1, 0)));
+
+        Assert.False(state.TryToggleLamp());
+        Assert.False(lamp.IsCarried);
+        Assert.Equal(3, wick.CurrentWick);
+        Assert.Equal(2, turns.CurrentTurn);
     }
 
     [Fact]
@@ -88,7 +125,7 @@ public sealed class PlayerMovementStateTests
         var lamp = new LampState(new GridCoord(2, 2));
         var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
 
-        state.TryPlaceLamp();
+        state.TryToggleLamp();
         state.TryMove(new GridCoord(1, 0));
         state.TryMove(new GridCoord(-1, 0));
 
@@ -105,7 +142,7 @@ public sealed class PlayerMovementStateTests
         var lamp = new LampState(new GridCoord(2, 2));
         var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
 
-        Assert.True(state.TryPlaceLamp());
+        Assert.True(state.TryToggleLamp());
         Assert.True(state.TryMove(new GridCoord(1, 0)));
         Assert.True(state.TryMove(new GridCoord(-1, 0)));
 
@@ -125,7 +162,7 @@ public sealed class PlayerMovementStateTests
         var lamp = new LampState(new GridCoord(2, 2));
         var state = new PlayerMovementState(new BoardState(5, 5), wick, turns, lamp, new GridCoord(2, 2));
 
-        Assert.True(state.TryPlaceLamp());
+        Assert.True(state.TryToggleLamp());
         Assert.True(state.TryMove(new GridCoord(1, 0)));
         Assert.True(state.TryMove(new GridCoord(-1, 0)));
 

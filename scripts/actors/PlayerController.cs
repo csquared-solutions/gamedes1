@@ -61,14 +61,23 @@ public sealed class PlayerMovementState
         return true;
     }
 
-    public bool TryPlaceLamp()
+    public bool TryToggleLamp()
     {
-        if (!_lamp.IsCarried || !TrySpendAction())
+        var canRecover = !_lamp.IsCarried && _lamp.Cell == Cell;
+        if ((!_lamp.IsCarried && !canRecover) || !TrySpendAction())
         {
             return false;
         }
 
-        _lamp.Place(Cell);
+        if (canRecover)
+        {
+            _lamp.AttachToPlayer(Cell);
+        }
+        else
+        {
+            _lamp.Place(Cell);
+        }
+
         RefreshVisibility();
         return true;
     }
@@ -149,10 +158,10 @@ public partial class PlayerController : Node2D
         return true;
     }
 
-    public bool TryPlaceLamp()
+    public bool TryToggleLamp()
     {
         ActionStarting?.Invoke();
-        if (_state is null || !_state.TryPlaceLamp())
+        if (_state is null || !_state.TryToggleLamp())
         {
             ActionFinished?.Invoke(false);
             return false;
@@ -204,7 +213,7 @@ public partial class PlayerController : Node2D
 
         if (inputEvent.IsActionPressed("lamp_toggle"))
         {
-            TryPlaceLamp();
+            TryToggleLamp();
             GetViewport().SetInputAsHandled();
             return;
         }

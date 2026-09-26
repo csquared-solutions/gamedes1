@@ -5,6 +5,7 @@ using Godot;
 using Wick.Actors;
 using Wick.Board;
 using Wick.Core;
+using Wick.Ui;
 
 namespace Wick.Hazards;
 
@@ -80,16 +81,17 @@ public partial class HazardSystem : Node
             return;
         }
 
-        SyncMarkerSet(_crawlerMarkers, State.CrawlerCells);
-        SyncMarkerSet(_mothMarkers, State.MothCells);
+        SyncMarkerSet(_crawlerMarkers, State.CrawlerCells, State.CrawlerMotion);
+        SyncMarkerSet(_mothMarkers, State.MothCells, State.MothMotion);
     }
 
-    private void SyncMarkerSet(IReadOnlyList<Node2D> markers, IReadOnlyList<GridCoord> cells)
+    private void SyncMarkerSet(IReadOnlyList<Node2D> markers, IReadOnlyList<GridCoord> cells, IReadOnlyList<HazardMotionState> motion)
     {
         for (var index = 0; index < markers.Count; index++)
         {
             markers[index].Position = ToWorld(cells[index]);
             markers[index].Visible = _visibility.IsVisible(cells[index]);
+            markers[index].GetNode<Line2D>("StateRing").Modulate = HazardStateColor.For(motion[index]);
         }
     }
 

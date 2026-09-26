@@ -17,7 +17,7 @@ public sealed class HudPresentationStateTests
 
         Assert.Equal("LEVEL 4/7 | LAST CLEAR: 5 WICK", presentation.CampaignStatus);
         Assert.Equal("CAMPAIGN MODE | P PRACTICE", presentation.PracticeStatus);
-        Assert.Equal("P PRACTICE | Z UNDO | E SET LAMP | F FLARE | R RESTART", presentation.Controls);
+        Assert.Equal("P PRACTICE | Z UNDO | E LAMP | F FLARE | R RESTART", presentation.Controls);
     }
 
     [Theory]

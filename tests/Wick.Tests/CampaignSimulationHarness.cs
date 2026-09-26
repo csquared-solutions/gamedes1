@@ -317,7 +317,7 @@ internal static class CampaignSimulationHarness
         }
 
         var session = Restore(level, board, node);
-        if (!session.Player.TryPlaceLamp())
+        if (!session.Player.TryToggleLamp())
         {
             diagnostics.InvalidAction++;
             return null;

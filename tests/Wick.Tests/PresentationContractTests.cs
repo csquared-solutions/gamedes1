@@ -64,6 +64,16 @@ public sealed class PresentationContractTests
     }
 
     [Theory]
+    [InlineData("scenes/hazards/Crawler.tscn")]
+    [InlineData("scenes/hazards/Moth.tscn")]
+    public void HazardMarkers_CarryAStateRing(string relativePath)
+    {
+        var scene = GodotTextSceneContract.ParseFile(ProjectFile(relativePath.Split('/')));
+
+        Assert.Equal("Line2D", scene.RequireNode("StateRing").Type);
+    }
+
+    [Theory]
     [InlineData("scenes/actors/Player.tscn", "Hood")]
     [InlineData("scenes/actors/Lamp.tscn", "GlowHalo")]
     [InlineData("scenes/hazards/Crawler.tscn", "Legs")]
