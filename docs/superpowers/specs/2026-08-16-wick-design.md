@@ -38,7 +38,7 @@ The playable prototype must prove five things:
   - wick depletes to zero
   - hazard reaches and smothers the lamp
 - Win state: player reaches the stair tile
-- Audio scope: two gameplay cues plus one quiet looping ambience; the ambience is an approved post-playtest expansion and has no gameplay effect
+- Audio scope: three gameplay cues plus one quiet looping ambience; moth wake, low wick, and light extinguished communicate state changes, while the ambience has no gameplay effect
 - Menus: minimal start/restart flow only
 
 ## Core Systems

@@ -18,6 +18,7 @@
 [ext_resource type="AudioStream" path="res://assets/audio/moth-wake.wav" id="17_moth_wake"]
 [ext_resource type="AudioStream" path="res://assets/audio/low-wick-gutter.wav" id="18_low_wick"]
 [ext_resource type="AudioStream" path="res://assets/audio/basement-ambience.wav" id="19_ambience"]
+[ext_resource type="AudioStream" path="res://assets/audio/light-out.wav" id="20_light_out"]
 
 [node name="GameRoot" type="Node"]
 
@@ -63,9 +64,13 @@ volume_db = -7.0
 stream = ExtResource("18_low_wick")
 volume_db = -9.0
 
+[node name="LightOutCue" type="AudioStreamPlayer" parent="AudioCues"]
+stream = ExtResource("20_light_out")
+volume_db = -4.0
+
 [node name="BasementAmbience" type="AudioStreamPlayer" parent="AudioCues"]
 stream = ExtResource("19_ambience")
-volume_db = -24.0
+volume_db = -12.0
 autoplay = true
 
 [node name="LevelManager" type="Node" parent="."]

@@ -7,13 +7,15 @@ public enum AudioCue
 {
     None = 0,
     MothWake = 1,
-    LowWick = 2
+    LowWick = 2,
+    LightOut = 4
 }
 
 public sealed class AudioCueState
 {
     private bool _mothsAwake;
     private bool _lowWick;
+    private bool _lightOutReported;
 
     public AudioCue Update(int wick, int radius, bool hasMoths)
     {
@@ -36,9 +38,21 @@ public sealed class AudioCueState
         return cue;
     }
 
+    public AudioCue ReportLightOut()
+    {
+        if (_lightOutReported)
+        {
+            return AudioCue.None;
+        }
+
+        _lightOutReported = true;
+        return AudioCue.LightOut;
+    }
+
     public void Reset()
     {
         _mothsAwake = false;
         _lowWick = false;
+        _lightOutReported = false;
     }
 }

@@ -47,4 +47,17 @@ public sealed class AudioCueStateTests
 
         Assert.Equal(AudioCue.MothWake, state.Update(wick: 12, radius: 6, hasMoths: true));
     }
+
+    [Fact]
+    public void ReportLightOut_PlaysOnceUntilTheLevelResets()
+    {
+        var state = new AudioCueState();
+
+        Assert.Equal(AudioCue.LightOut, state.ReportLightOut());
+        Assert.Equal(AudioCue.None, state.ReportLightOut());
+
+        state.Reset();
+
+        Assert.Equal(AudioCue.LightOut, state.ReportLightOut());
+    }
 }
