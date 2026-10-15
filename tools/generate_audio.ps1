@@ -59,7 +59,9 @@ for ($index = 0; $index -lt $gutter.Length; $index++) {
     $envelope = [Math]::Exp(-3.0 * $time) * (0.35 + 0.65 * [Math]::Abs([Math]::Sin($twoPi * 7 * $time)))
     $gutter[$index] = 0.38 * $envelope * (
         [Math]::Sin($twoPi * 128 * $time) +
-        0.33 * [Math]::Sin($twoPi * 83 * $time)
+        0.33 * [Math]::Sin($twoPi * 83 * $time) +
+        0.45 * [Math]::Sin($twoPi * 256 * $time) +
+        0.25 * [Math]::Sin($twoPi * 384 * $time)
     )
 }
 
@@ -107,3 +109,80 @@ for ($index = 0; $index -lt $ambience.Length; $index++) {
 }
 
 Write-MonoWave -Path (Join-Path $OutputRoot 'basement-ambience.wav') -Samples $ambience
+
+# Action cues. Seeded noise keeps the output reproducible.
+$random = [Random]::new(7)
+
+$step = [double[]]::new([int]($sampleRate * 0.14))
+$lowpass = 0.0
+for ($index = 0; $index -lt $step.Length; $index++) {
+    $time = $index / $sampleRate
+    $lowpass += 0.18 * (($random.NextDouble() * 2.0 - 1.0) - $lowpass)
+    $step[$index] = 1.6 * [Math]::Exp(-38.0 * $time) * $lowpass +
+        0.35 * [Math]::Exp(-30.0 * $time) * [Math]::Sin($twoPi * 170.0 * $time)
+}
+
+Write-MonoWave -Path (Join-Path $OutputRoot 'step.wav') -Samples $step
+
+$lamp = [double[]]::new([int]($sampleRate * 0.4))
+for ($index = 0; $index -lt $lamp.Length; $index++) {
+    $time = $index / $sampleRate
+    $lamp[$index] = 0.3 * [Math]::Exp(-13.0 * $time) * (
+        [Math]::Sin($twoPi * 1320.0 * $time) +
+        0.6 * [Math]::Sin($twoPi * 1985.0 * $time) +
+        0.3 * [Math]::Sin($twoPi * 2650.0 * $time)
+    ) + 0.35 * [Math]::Exp(-25.0 * $time) * [Math]::Sin($twoPi * 150.0 * $time)
+}
+
+Write-MonoWave -Path (Join-Path $OutputRoot 'lamp-clink.wav') -Samples $lamp
+
+$flask = [double[]]::new([int]($sampleRate * 0.62))
+$phase = 0.0
+for ($index = 0; $index -lt $flask.Length; $index++) {
+    $time = $index / $sampleRate
+    $sample = 0.0
+    foreach ($start in @(0.0, 0.17, 0.34)) {
+        $age = $time - $start
+        if ($age -ge 0.0 -and $age -lt 0.14) {
+            $frequency = 260.0 + 3200.0 * $age
+            $sample += 0.6 * [Math]::Sin([Math]::PI * $age / 0.14) * [Math]::Sin($twoPi * $frequency * $age)
+        }
+    }
+
+    $flask[$index] = $sample
+}
+
+Write-MonoWave -Path (Join-Path $OutputRoot 'flask-glug.wav') -Samples $flask
+
+$flare = [double[]]::new([int]($sampleRate * 0.75))
+$lowpass = 0.0
+for ($index = 0; $index -lt $flare.Length; $index++) {
+    $time = $index / $sampleRate
+    $lowpass += 0.45 * (($random.NextDouble() * 2.0 - 1.0) - $lowpass)
+    $envelope = [Math]::Min(1.0, $time / 0.06) * [Math]::Exp(-4.5 * $time)
+    $crackle = if ($random.NextDouble() -lt 0.004) { $random.NextDouble() - 0.5 } else { 0.0 }
+    $sweep = [Math]::Sin($twoPi * (500.0 + 900.0 * $time) * $time)
+    $flare[$index] = $envelope * (0.55 * $lowpass + 0.22 * $sweep) + 0.8 * $crackle
+}
+
+Write-MonoWave -Path (Join-Path $OutputRoot 'flare-whoosh.wav') -Samples $flare
+
+$clear = [double[]]::new([int]($sampleRate * 1.2))
+$notes = @(523.25, 659.25, 783.99, 1046.5)
+for ($index = 0; $index -lt $clear.Length; $index++) {
+    $time = $index / $sampleRate
+    $sample = 0.0
+    for ($note = 0; $note -lt $notes.Length; $note++) {
+        $age = $time - 0.11 * $note
+        if ($age -ge 0.0) {
+            $sample += 0.2 * [Math]::Exp(-3.6 * $age) * (
+                [Math]::Sin($twoPi * $notes[$note] * $age) +
+                0.3 * [Math]::Sin($twoPi * 2.0 * $notes[$note] * $age)
+            )
+        }
+    }
+
+    $clear[$index] = $sample
+}
+
+Write-MonoWave -Path (Join-Path $OutputRoot 'stair-clear.wav') -Samples $clear

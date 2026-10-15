@@ -68,4 +68,18 @@ public sealed class WickSystemTests
         Assert.Equal(6, wick.CurrentRadius);
         Assert.False(wick.IsFlareActive);
     }
+
+    [Fact]
+    public void FlareFired_IsRaisedOnlyWhenTheFlareActuallyFires()
+    {
+        var wick = new WickState();
+        wick.Initialize(startingWick: 5);
+        var fired = 0;
+        wick.FlareFired += () => fired++;
+
+        Assert.True(wick.TryFireFlare());
+        Assert.False(wick.TryFireFlare());
+
+        Assert.Equal(1, fired);
+    }
 }

@@ -12,6 +12,10 @@ default_font = ExtResource("4_font")
 default_font_size = 15
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_hud"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
 bg_color = Color(0.031, 0.035, 0.043, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -60,54 +64,80 @@ theme_override_styles/panel = SubResource("StyleBox_hud")
 
 [node name="Content" type="GridContainer" parent="Margin/Panel"]
 layout_mode = 2
-theme_override_constants/h_separation = 18
+theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 2
-columns = 4
+columns = 5
 
 [node name="WickGauge" parent="Margin/Panel/Content" instance=ExtResource("2_wick_gauge")]
 layout_mode = 2
 
 [node name="CampaignStatus" type="Label" parent="Margin/Panel/Content"]
-custom_minimum_size = Vector2(150, 28)
+custom_minimum_size = Vector2(290, 28)
 layout_mode = 2
+size_flags_vertical = 0
 theme_override_colors/font_color = Color(1, 0.902, 0.639, 1)
 theme_override_font_sizes/font_size = 17
 text = "LEVEL 1/7"
 vertical_alignment = 1
 
-[node name="PracticeStatus" type="Label" parent="Margin/Panel/Content"]
-custom_minimum_size = Vector2(250, 28)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.93, 0.88, 0.72, 1)
-text = "CAMPAIGN MODE | P PRACTICE"
-vertical_alignment = 1
-
 [node name="ReturnCost" type="Label" parent="Margin/Panel/Content"]
 custom_minimum_size = Vector2(170, 28)
 layout_mode = 2
+size_flags_vertical = 0
 theme_override_colors/font_color = Color(1, 0.902, 0.639, 1)
+theme_override_font_sizes/font_size = 17
 text = "RETURN COST 0"
 vertical_alignment = 1
 
 [node name="CrawlerState" parent="Margin/Panel/Content" instance=ExtResource("3_hazard_icon")]
+custom_minimum_size = Vector2(170, 28)
 layout_mode = 2
 
 [node name="MothState" parent="Margin/Panel/Content" instance=ExtResource("3_hazard_icon")]
+custom_minimum_size = Vector2(170, 28)
 layout_mode = 2
 
-[node name="LossCause" type="Label" parent="Margin/Panel/Content"]
-custom_minimum_size = Vector2(250, 28)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.45, 0.3, 1)
-vertical_alignment = 1
+[node name="Footer" type="MarginContainer" parent="."]
+offset_left = 12.0
+offset_top = 742.0
+offset_right = 1204.0
+offset_bottom = 826.0
+theme = SubResource("Theme_wick")
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 4
 
-[node name="Controls" type="Label" parent="Margin/Panel/Content"]
-custom_minimum_size = Vector2(370, 28)
+[node name="Panel" type="PanelContainer" parent="Footer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.79, 0.69, 1)
-theme_override_font_sizes/font_size = 13
-text = "ARROWS MOVE | E LAMP | F FLARE | R RESTART"
-vertical_alignment = 1
+theme_override_styles/panel = SubResource("StyleBox_hud")
+
+[node name="Rows" type="VBoxContainer" parent="Footer/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="LossCause" type="Label" parent="Footer/Panel/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="Row" type="HBoxContainer" parent="Footer/Panel/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="PracticeStatus" type="Label" parent="Footer/Panel/Rows/Row"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.88, 0.72, 1)
+text = "CAMPAIGN MODE | P PRACTICE"
+
+[node name="Controls" type="Label" parent="Footer/Panel/Rows/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.902, 0.639, 1)
+text = "ARROWS/WASD MOVE | E LAMP | F FLARE | R RESTART"
+horizontal_alignment = 2
 
 [node name="StartOverlay" type="Control" parent="."]
 z_index = 100
@@ -149,17 +179,17 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -330.0
-offset_top = -190.0
-offset_right = 330.0
-offset_bottom = 190.0
+offset_left = -440.0
+offset_top = -320.0
+offset_right = 440.0
+offset_bottom = 320.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBox_start")
 
 [node name="CardContent" type="VBoxContainer" parent="StartOverlay/Card"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="Eyebrow" type="Label" parent="StartOverlay/Card/CardContent"]
@@ -172,7 +202,7 @@ horizontal_alignment = 1
 [node name="Title" type="Label" parent="StartOverlay/Card/CardContent"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.949, 0.812, 1)
-theme_override_font_sizes/font_size = 58
+theme_override_font_sizes/font_size = 48
 text = "WICK"
 horizontal_alignment = 1
 
@@ -182,6 +212,30 @@ theme_override_colors/font_color = Color(0.93, 0.88, 0.72, 1)
 theme_override_font_sizes/font_size = 18
 text = "Every step spends your light. Reach the stair before it goes out."
 horizontal_alignment = 1
+
+[node name="HowToPlay" type="Label" parent="StartOverlay/Card/CardContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.816, 0.659, 0.306, 1)
+text = "HOW TO PLAY"
+horizontal_alignment = 1
+
+[node name="Rules" type="HBoxContainer" parent="StartOverlay/Card/CardContent"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 20
+
+[node name="Keys" type="Label" parent="StartOverlay/Card/CardContent/Rules"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.902, 0.639, 1)
+theme_override_font_sizes/font_size = 16
+text = "GOAL\nARROWS / WASD\nWICK\nE\nF\nOIL FLASK\nCRAWLER\nMOTH\nLEVEL 3+\nDANGER\nR  /  P"
+horizontal_alignment = 2
+
+[node name="Meanings" type="Label" parent="StartOverlay/Card/CardContent/Rules"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.88, 0.72, 1)
+theme_override_font_sizes/font_size = 16
+text = "Find the stair and step onto it before your wick runs out.\nMove one tile. Every action burns 1 wick.\nYour light and your clock. Less wick, smaller light.\nSet the lamp down. Its light stays there; walk back over it to take it.\nFlare: costs 3 wick and doubles your light for one turn.\nStep on it: 2 turns of darkness, then +6 wick.\nFast in the dark, slow inside your light.\nWakes when SIGHT is 5 or more, then flies at your lamp.\nSet the lamp down before you step onto the stair.\nA crawler or moth that reaches your lamp smothers the light.\nRestart the level  /  practice mode (wick frozen, Z to undo)."
 
 [node name="ContentNote" type="Label" parent="StartOverlay/Card/CardContent"]
 layout_mode = 2

@@ -15,6 +15,7 @@ public sealed class WickState : IPlayerWick
 
     public event Action<int> WickChanged;
     public event Action Depleted;
+    public event Action FlareFired;
 
     public void StartFreshLevel(int startingWick, bool freezeDecrease)
     {
@@ -83,6 +84,7 @@ public sealed class WickState : IPlayerWick
 
         Spend(Data.LevelTuning.FlareCost);
         _flareTurnsRemaining = 1;
+        FlareFired?.Invoke();
         return true;
     }
 

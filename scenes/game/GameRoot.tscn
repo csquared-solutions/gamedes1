@@ -19,6 +19,11 @@
 [ext_resource type="AudioStream" path="res://assets/audio/low-wick-gutter.wav" id="18_low_wick"]
 [ext_resource type="AudioStream" path="res://assets/audio/basement-ambience.wav" id="19_ambience"]
 [ext_resource type="AudioStream" path="res://assets/audio/light-out.wav" id="20_light_out"]
+[ext_resource type="AudioStream" path="res://assets/audio/step.wav" id="21_step"]
+[ext_resource type="AudioStream" path="res://assets/audio/lamp-clink.wav" id="22_lamp"]
+[ext_resource type="AudioStream" path="res://assets/audio/flare-whoosh.wav" id="23_flare"]
+[ext_resource type="AudioStream" path="res://assets/audio/flask-glug.wav" id="24_flask"]
+[ext_resource type="AudioStream" path="res://assets/audio/stair-clear.wav" id="25_stair"]
 
 [node name="GameRoot" type="Node"]
 
@@ -58,19 +63,39 @@ script = ExtResource("16_audio_cues")
 
 [node name="MothWakeCue" type="AudioStreamPlayer" parent="AudioCues"]
 stream = ExtResource("17_moth_wake")
-volume_db = -7.0
+volume_db = -2.0
 
 [node name="LowWickCue" type="AudioStreamPlayer" parent="AudioCues"]
 stream = ExtResource("18_low_wick")
-volume_db = -9.0
+volume_db = -4.0
 
 [node name="LightOutCue" type="AudioStreamPlayer" parent="AudioCues"]
 stream = ExtResource("20_light_out")
 volume_db = -4.0
 
+[node name="StepCue" type="AudioStreamPlayer" parent="AudioCues"]
+stream = ExtResource("21_step")
+volume_db = -14.0
+
+[node name="LampCue" type="AudioStreamPlayer" parent="AudioCues"]
+stream = ExtResource("22_lamp")
+volume_db = -6.0
+
+[node name="FlareCue" type="AudioStreamPlayer" parent="AudioCues"]
+stream = ExtResource("23_flare")
+volume_db = -3.0
+
+[node name="FlaskCue" type="AudioStreamPlayer" parent="AudioCues"]
+stream = ExtResource("24_flask")
+volume_db = -10.0
+
+[node name="StairClearCue" type="AudioStreamPlayer" parent="AudioCues"]
+stream = ExtResource("25_stair")
+volume_db = 0.0
+
 [node name="BasementAmbience" type="AudioStreamPlayer" parent="AudioCues"]
 stream = ExtResource("19_ambience")
-volume_db = -12.0
+volume_db = -7.0
 autoplay = true
 
 [node name="LevelManager" type="Node" parent="."]

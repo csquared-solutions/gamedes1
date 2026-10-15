@@ -17,7 +17,24 @@ public sealed class HudPresentationStateTests
 
         Assert.Equal("LEVEL 4/7 | LAST CLEAR: 5 WICK", presentation.CampaignStatus);
         Assert.Equal("CAMPAIGN MODE | P PRACTICE", presentation.PracticeStatus);
-        Assert.Equal("P PRACTICE | Z UNDO | E LAMP | F FLARE | R RESTART", presentation.Controls);
+        Assert.Equal("ARROWS/WASD MOVE | E LAMP | F FLARE | R RESTART", presentation.Controls);
+    }
+
+    [Theory]
+    [InlineData(1, "EVERY STEP BURNS 1 WICK")]
+    [InlineData(2, "MOTHS WAKE")]
+    [InlineData(3, "SET THE LAMP DOWN (E) BEFORE YOU STEP ONTO THE STAIR")]
+    [InlineData(7, "PRACTICE MODE")]
+    public void EachLevel_ShowsAHintForTheRuleItIntroduces(int level, string expected)
+    {
+        var presentation = HudPresentationState.Create(new HudPresentationInput(
+            LevelIndex: level,
+            IsRunComplete: false,
+            ReportedRemainingWick: -1,
+            IsPracticeMode: false,
+            CanUndo: false));
+
+        Assert.Contains(expected, presentation.Hint);
     }
 
     [Theory]
@@ -47,6 +64,7 @@ public sealed class HudPresentationStateTests
             CanUndo: false));
 
         Assert.Equal("RUN COMPLETE | LEVEL 7 CLEAR: 3 WICK", presentation.CampaignStatus);
+        Assert.Equal("RUN COMPLETE. PRESS R TO PLAY AGAIN.", presentation.Hint);
     }
 
     [Fact]

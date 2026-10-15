@@ -45,6 +45,8 @@ The playable prototype must prove five things:
 
 ### Post-Playtest Revision
 
+Reviewer feedback (2026-10-15) asked for a tutorial, a clearer HUD, and audible SFX. The start card now carries a how-to-play list, the HUD footer shows one rule hint per level plus the full controls, and every player action (step, lamp, flare, flask) and the stair clear has a cue. This supersedes the no-text and three-cue limits above.
+
 The first hands-on review found that sealed hazard pockets made the campaign too passive. Hazard starts remain authored and path length remains optimal, but equal-cost route choices now use the GDD's permitted seeded tie-break randomness. Every crawler, moth, flask, and stair must connect to the playable floor area, and late-game flask reviews intentionally include unsafe take-all routes so refuelling remains a decision rather than a collection task.
 
 ## 1. Turn System

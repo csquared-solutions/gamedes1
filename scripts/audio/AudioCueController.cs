@@ -1,6 +1,8 @@
 using Godot;
+using Wick.Actors;
 using Wick.Core;
 using Wick.Hazards;
+using Wick.Pickups;
 
 namespace Wick.Audio;
 
@@ -27,6 +29,19 @@ public partial class AudioCueController : Node
         _lowWick = GetNode<AudioStreamPlayer>("LowWickCue");
         _lightOut = GetNode<AudioStreamPlayer>("LightOutCue");
         _events.Connect(GameEvents.SignalName.LightOut, Callable.From<string>(OnLightOut));
+
+        // Action feedback: one sound per player action, plus the stair.
+        var player = GetNode<PlayerController>("../Player");
+        var step = GetNode<AudioStreamPlayer>("StepCue");
+        var lamp = GetNode<AudioStreamPlayer>("LampCue");
+        var flare = GetNode<AudioStreamPlayer>("FlareCue");
+        var flask = GetNode<AudioStreamPlayer>("FlaskCue");
+        var stairClear = GetNode<AudioStreamPlayer>("StairClearCue");
+        player.CellChanged += _ => step.Play();
+        player.LampChanged += () => lamp.Play();
+        _wick.State.FlareFired += () => flare.Play();
+        GetNode<OilFlaskController>("../OilFlask").LiftStarted += () => flask.Play();
+        _events.Connect(GameEvents.SignalName.LevelCleared, Callable.From<int, int>((_, _) => stairClear.Play()));
     }
 
     public override void _Process(double delta)

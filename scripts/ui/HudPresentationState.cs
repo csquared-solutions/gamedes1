@@ -12,10 +12,22 @@ public readonly record struct HudPresentation(
     string CampaignStatus,
     string PracticeStatus,
     string Controls,
-    string ExitPrompt);
+    string ExitPrompt,
+    string Hint);
 
 public static class HudPresentationState
 {
+    private static readonly string[] LevelHints =
+    {
+        "FIND THE STAIR. EVERY STEP BURNS 1 WICK, AND LESS WICK MEANS LESS LIGHT.",
+        "MOTHS WAKE WHEN YOUR SIGHT IS 5 OR MORE, THEN FLY AT YOUR LAMP.",
+        "FROM HERE ON, SET THE LAMP DOWN (E) BEFORE YOU STEP ONTO THE STAIR.",
+        "A FLARE (F) DOUBLES YOUR LIGHT FOR ONE TURN AND COSTS 3 WICK.",
+        "CRAWLERS RUSH IN THE DARK BUT SLOW DOWN INSIDE YOUR LIGHT.",
+        "AN OIL FLASK GIVES 6 WICK, BUT A BRIGHTER LAMP WAKES THE MOTHS.",
+        "LAST LEVEL. STUCK? PRESS P FOR PRACTICE MODE WITH UNDO.",
+    };
+
     public static HudPresentation Create(HudPresentationInput input)
     {
         var campaignStatus = input.IsRunComplete
@@ -29,9 +41,12 @@ public static class HudPresentationState
         return new HudPresentation(
             campaignStatus,
             practiceStatus,
-            "P PRACTICE | Z UNDO | E LAMP | F FLARE | R RESTART",
+            "ARROWS/WASD MOVE | E LAMP | F FLARE | R RESTART",
             input.IsExitBlockedByCarriedLamp
                 ? "EXIT BLOCKED: STEP BACK, PRESS E TO SET LAMP, THEN RETURN"
-                : string.Empty);
+                : string.Empty,
+            input.IsRunComplete
+                ? "RUN COMPLETE. PRESS R TO PLAY AGAIN."
+                : LevelHints[System.Math.Clamp(input.LevelIndex, 1, LevelHints.Length) - 1]);
     }
 }

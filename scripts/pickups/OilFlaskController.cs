@@ -158,6 +158,7 @@ public partial class OilFlaskController : Node2D
     private readonly FlaskPresentationState _presentation = new();
     private int _presentationVersion;
 
+    public event Action LiftStarted;
     public OilFlaskCollectionState State => _state;
     public int DisplayedWick => _presentation.GetDisplayedWick(_wick?.CurrentWick ?? 0);
     public int DisplayedRadius => _presentation.GetDisplayedRadius(_wick?.CurrentRadius ?? 0);
@@ -197,6 +198,7 @@ public partial class OilFlaskController : Node2D
         _player.LockInput();
         _visibility.ForceDarkness();
         _presentation.Begin(_wick.CurrentWick);
+        LiftStarted?.Invoke();
         var lifted = _state.TryBeginLift(playerCell, _canContinueLift);
         RefreshMarkers();
         FinishLiftPresentation(_presentationVersion);

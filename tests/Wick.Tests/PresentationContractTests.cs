@@ -18,10 +18,15 @@ public sealed class PresentationContractTests
         Assert.Equal("AudioStreamPlayer", scene.RequireNode("MothWakeCue").Type);
         Assert.Equal("AudioStreamPlayer", scene.RequireNode("LowWickCue").Type);
         Assert.Equal("AudioStreamPlayer", scene.RequireNode("LightOutCue").Type);
+        foreach (var actionCue in new[] { "StepCue", "LampCue", "FlareCue", "FlaskCue", "StairClearCue" })
+        {
+            Assert.Equal("AudioStreamPlayer", scene.RequireNode(actionCue).Type);
+        }
+
         var ambience = scene.RequireNode("BasementAmbience");
         Assert.Equal("AudioStreamPlayer", ambience.Type);
         Assert.Equal("true", ambience.Properties["autoplay"]);
-        Assert.Equal(4, scene.Nodes.Count(node => node.Type == "AudioStreamPlayer"));
+        Assert.Equal(9, scene.Nodes.Count(node => node.Type == "AudioStreamPlayer"));
     }
 
     [Fact]
@@ -47,6 +52,21 @@ public sealed class PresentationContractTests
         Assert.Contains("darkness", contentNote.Properties["text"], StringComparison.OrdinalIgnoreCase);
         Assert.Contains("insects", contentNote.Properties["text"], StringComparison.OrdinalIgnoreCase);
         Assert.Equal("Label", scene.RequireNode("StartPrompt").Type);
+    }
+
+    [Fact]
+    public void StartScreen_TeachesTheControlsAndRules()
+    {
+        var scene = GodotTextSceneContract.ParseFile(ProjectFile("scenes", "ui", "Hud.tscn"));
+        var keys = scene.RequireNode("Keys").Properties["text"];
+        var meanings = scene.RequireNode("Meanings").Properties["text"];
+
+        foreach (var key in new[] { "ARROWS / WASD", "E", "F", "OIL FLASK", "CRAWLER", "MOTH" })
+        {
+            Assert.Contains(key, keys, StringComparison.Ordinal);
+        }
+
+        Assert.Equal(keys.Split(@"\n").Length, meanings.Split(@"\n").Length);
     }
 
     [Theory]
@@ -104,6 +124,11 @@ public sealed class PresentationContractTests
         Assert.True(File.Exists(ProjectFile("assets", "audio", "low-wick-gutter.wav")));
         Assert.True(File.Exists(ProjectFile("assets", "audio", "light-out.wav")));
         Assert.True(File.Exists(ProjectFile("assets", "audio", "basement-ambience.wav")));
+        foreach (var cue in new[] { "step.wav", "lamp-clink.wav", "flare-whoosh.wav", "flask-glug.wav", "stair-clear.wav" })
+        {
+            Assert.True(File.Exists(ProjectFile("assets", "audio", cue)));
+        }
+
         var ambienceImport = File.ReadAllText(ProjectFile("assets", "audio", "basement-ambience.wav.import"));
         Assert.Contains("edit/loop_mode=1", ambienceImport, StringComparison.Ordinal);
         Assert.True(File.Exists(ProjectFile("assets", "fonts", "AtkinsonHyperlegible-Regular.ttf")));
@@ -115,6 +140,7 @@ public sealed class PresentationContractTests
         Assert.Contains("low-wick-gutter.wav", attribution, StringComparison.Ordinal);
         Assert.Contains("light-out.wav", attribution, StringComparison.Ordinal);
         Assert.Contains("basement-ambience.wav", attribution, StringComparison.Ordinal);
+        Assert.Contains("stair-clear.wav", attribution, StringComparison.Ordinal);
     }
 
     private static string ProjectFile(params string[] relativePath)
